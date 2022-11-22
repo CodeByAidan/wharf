@@ -107,63 +107,73 @@ class Gateway:
             self._first_heartbeat = False
 
         await asyncio.sleep(jitters / 1000)
-        self.heartbeat_task = asyncio.create_task(self.keep_heartbeat())
+
 
     async def connect(self, *, reconnect: bool = False):
-        if not self.session:
-            self.session = ClientSession()
+        try:
+            if not self.session:
+                self.session = ClientSession()
 
-        self.ws = await self.session.ws_connect(self.gw_url)
-        _log.info("Connected to gateway")
+            self.ws = await self.session.ws_connect(self.gw_url)
+            _log.info("Connected to gateway")
 
-        while True:
-            async for msg in self.ws:
-                if msg.type in (WSMsgType.BINARY, WSMsgType.TEXT):
-                    data: Union[Any, str] = None
-                    if msg.type == WSMsgType.BINARY: 
-                        data = self._decompress_msg(msg.data)
-                    elif msg.type == WSMsgType.TEXT:  
-                        data = msg.data  
+            while True:
+                async for msg in self.ws:
+                    if msg.type in (WSMsgType.BINARY, WSMsgType.TEXT):
+                        data: Union[Any, str] = None
+                        if msg.type == WSMsgType.BINARY: 
+                            data = self._decompress_msg(msg.data)
+                        elif msg.type == WSMsgType.TEXT:  
+                            data = msg.data  
 
                     data = json.loads(data)
 
-                self._last_sequence = data["s"]
+                    self._last_sequence = data["s"]
 
-                if data["op"] == OPCodes.hello:
-                    self.heartbeat_interval = data["d"]["heartbeat_interval"]
+                    if data["op"] == OPCodes.hello:
+                        self.heartbeat_interval = data["d"]["heartbeat_interval"]
 
-                    await self.ws.send_json(self.identify_payload)
+                        if reconnect:
+                            await self.ws.send_json(self.resume_payload)
+                        else:
+                            await self.ws.send_json(self.identify_payload)
 
-                    await self.ws.send_json(self.ping_payload)
-                    self.heartbeat_task = asyncio.create_task(self.keep_heartbeat())
+                        await self.ws.send_json(self.ping_payload)
+
+                        self.heartbeat_task = asyncio.create_task(self.keep_heartbeat())
 
 
-                elif data["op"] == OPCodes.heartbeat:
-                    await self.ws.send_json(self.ping_payload)
+                    elif data["op"] == OPCodes.heartbeat: # From what ive seen, this is rare but better handle it for whenever it does come.
+                        await self.ws.send_json(self.ping_payload)
 
-                elif data["op"] == OPCodes.dispatch:
-                    event_data = data["d"]
+                    elif data["op"] == OPCodes.dispatch:
+                        event_data = data["d"]
 
-                    if data["t"] == "READY":
-                        self.session_id = data['d']['session_id']
-                        self.resume_gateway_url = data['d']['resume_gateway_url']
+                        if data["t"] == "READY":
+                            self.session_id = data['d']['session_id']
+                            self.resume_gateway_url = data['d']['resume_gateway_url']
+                        
+                        if data['t'].lower() not in self.dispatcher.events:
+                            pass
+                        else:
+                            self.dispatcher.dispatch(data["t"].lower(), event_data)
 
-                    self.dispatcher.dispatch(data["t"].lower(), event_data)
+                    elif data["op"] == OPCodes.heartbeat_ack:
+                        _log.info("Heartbeat Awknoledged!")
 
-                elif data["op"] == OPCodes.heartbeat_ack:
-                    _log.info("Heartbeat Awknoledged!")
+                    elif data['op'] == OPCodes.reconnect:
+                        await self.ws.close(code=4001)
+                        await self.connect(reconnect=True)
+                    elif data["op"] == OPCodes.invalid_session:
+                        await self.ws.close(code=4001)
+                        break
+                
+                    elif msg.type == WSMsgType.CLOSE:
+                        raise WebsocketClosed(msg.data, msg.extra)
 
-                elif data['op'] == OPCodes.reconnect:
-                    await self.ws.close(code=4001)
-                    await self.connect(reconnect=True)
-                elif data["op"] == OPCodes.invalid_session:
-                    await self.ws.close(code=4001)
-                    break
-            
-                elif msg.type == WSMsgType.CLOSE:
-                    raise WebsocketClosed(msg.data, msg.extras)
-
-                _log.info(data)
+        except Exception as e:
+            print(e)
+           
     @property
     def is_closed(self):
         if not self.ws:
