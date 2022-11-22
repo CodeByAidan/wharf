@@ -9,6 +9,8 @@ import json
 import zlib
 from .errors import WebsocketClosed
 from .dispatcher import Dispatcher
+if TYPE_CHECKING:
+    from .http import HTTPClient
 
 
 logging.basicConfig(level=logging.INFO)
@@ -35,7 +37,8 @@ class Gateway:
         heartbeat_interval: int
         resume_gw_url: str
 
-    def __init__(self, *, token: str, intents: int):
+    def __init__(self, http: HTTPClient, *, token: str, intents: int):
+        self.http = http
         self.session: Optional[ClientSession] = None
         self.token = token
         self.intents = intents
