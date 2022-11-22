@@ -2,12 +2,11 @@ from __future__ import annotations
 import asyncio
 import random
 from aiohttp import ClientSession, ClientWebSocketResponse,  WSMsgType
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union, Any  
 import logging
 from sys import platform as _os
 import json
 import zlib
-import traceback
 from .errors import WebsocketClosed
 
 
@@ -46,7 +45,7 @@ class Gateway:
 
         self._decompresser = zlib.decompressobj()
 
-    def _decompress_msg(self, msg: bytes):
+    def _decompress_msg(self, msg: Union[str, bytes]):
         ZLIB_SUFFIX = b"\x00\x00\xff\xff"
 
         out_str: str = ""
@@ -90,6 +89,15 @@ class Gateway:
 
         return payload
 
+    async def keep_heartbeat(self):
+        jitters = self.heartbeat_interval
+        if self._first_heartbeat:
+            jitters = self.heartbeat_interval * float(random.randint(0, 1))
+            self._first_heartbeat = False
+
+        await asyncio.sleep(jitters / 1000)
+        self.heartbeat_task = asyncio.create_task(self.keep_heartbeat())
+
     async def connect(self, *, reconnect: bool = False):
         if not self.session:
             self.session = ClientSession()
@@ -99,7 +107,15 @@ class Gateway:
 
         while True:
             async for msg in self.ws:
-                data = json.loads(self._decompress_msg(msg.data))
+                if msg.type in (WSMsgType.BINARY, WSMsgType.TEXT):
+                    data: Union[Any, str] = None
+                    if msg.type == WSMsgType.BINARY: 
+                        data = self._decompress_msg(msg.data)
+                    elif msg.type == WSMsgType.TEXT:  
+                        data = msg.data  
+
+                    data = json.loads(data)
+
                 self._last_sequence = data["s"]
 
                 if data["op"] == OPCodes.hello:
@@ -108,12 +124,8 @@ class Gateway:
                     await self.ws.send_json(self.identify_payload)
 
                     await self.ws.send_json(self.ping_payload)
-                    jitters = self.heartbeat_interval
-                    if self._first_heartbeat:
-                        jitters = self.heartbeat_interval * float(random.randint(0, 1))
-                        self._first_heartbeat = False
-
-                    await asyncio.sleep(jitters / 1000)
+                    self.heartbeat_task = asyncio.create_task(self.keep_heartbeat())
+                    
 
                 elif data["op"] == OPCodes.heartbeat:
                     await self.ws.send_json(self.ping_payload)
