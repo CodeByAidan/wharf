@@ -8,6 +8,7 @@ from sys import platform as _os
 import json
 import zlib
 from .errors import WebsocketClosed
+from .dispatcher import Dispatcher
 
 
 logging.basicConfig(level=logging.INFO)
@@ -42,7 +43,7 @@ class Gateway:
         self.gw_url: str = f"wss://gateway.discord.gg/?v={self.api_version}&encoding=json&compress=zlib-stream"
         self._last_sequence: Optional[int] = None
         self._first_heartbeat = True
-
+        self.dispatcher = Dispatcher()
         self._decompresser = zlib.decompressobj()
 
     def _decompress_msg(self, msg: Union[str, bytes]):
@@ -57,6 +58,16 @@ class Gateway:
         buff = self._decompresser.decompress(msg)
         out_str = buff.decode("utf-8")
         return out_str
+
+    def listen(self, name: str):
+        def inner(func):
+            if name not in self.dispatcher.events:
+                self.dispatcher.add_event(name)
+
+            self.dispatcher.add_callback(name, func)
+
+        
+        return inner
 
     @property
     def identify_payload(self):
@@ -77,9 +88,9 @@ class Gateway:
         return {
             "op": OPCodes.resume,
             "d": {
-                "token": self._token,
+                "token": self.token,
                 "seq": self._last_sequence,
-                "session_id": self._session_id,
+                "session_id": self.session_id,
             },
         }
 
@@ -125,15 +136,19 @@ class Gateway:
 
                     await self.ws.send_json(self.ping_payload)
                     self.heartbeat_task = asyncio.create_task(self.keep_heartbeat())
-                    
+
 
                 elif data["op"] == OPCodes.heartbeat:
                     await self.ws.send_json(self.ping_payload)
 
                 elif data["op"] == OPCodes.dispatch:
+                    event_data = data["d"]
+
                     if data["t"] == "READY":
                         self.session_id = data['d']['session_id']
                         self.resume_gateway_url = data['d']['resume_gateway_url']
+
+                    self.dispatcher.dispatch(data["t"].lower(), event_data)
 
                 elif data["op"] == OPCodes.heartbeat_ack:
                     _log.info("Heartbeat Awknoledged!")
@@ -148,6 +163,7 @@ class Gateway:
                 elif msg.type == WSMsgType.CLOSE:
                     raise WebsocketClosed(msg.data, msg.extras)
 
+                _log.info(data)
     @property
     def is_closed(self):
         if not self.ws:
