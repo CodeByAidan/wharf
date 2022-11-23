@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from .http import HTTPClient
 
 
+logging.basicConfig(level=logging.INFO)
 _log = logging.getLogger(__name__)
 
 
@@ -171,7 +172,7 @@ class Gateway:
                 break
 
             elif msg.type == WSMsgType.CLOSE:
-                print(":(")
+                raise WebsocketClosed(msg.data, msg.extra)
 
     @property
     def is_closed(self):

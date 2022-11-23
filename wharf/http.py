@@ -1,7 +1,7 @@
 import asyncio
 import json
 import sys
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 from urllib.parse import quote as urlquote
 
 import aiohttp
@@ -9,6 +9,9 @@ import aiohttp
 from . import __version__
 from .errors import HTTPException
 from .gateway import Gateway
+import logging
+
+_log = logging.getLogger(__name__)
 
 __all__ = ("Route",)
 
@@ -17,15 +20,9 @@ BASE_API_URL = "https://discord.com/api/v10"
 
 
 class Route:
-    base: str = "https://discord.com/api/v10"
-
-    def __init__(self, method: str, url: str,  **params: Any):
-        self.method = method
-        self.url = self.base + url
-        self.params = params
-
-        if params:
-            url = url.format_map({k: urlquote(v) if isinstance(v, str) else v for k, v in params.items()}) # Parses the url
+    def __init__(self, method: str, url: str, **params: Any) -> None:
+        self.params: dict[str, Any] = params
+        self.method: str = method
         self.url: str = url
 
         # top-level resource parameters
@@ -33,20 +30,23 @@ class Route:
         self.channel_id: Optional[int] = params.get("channel_id")
         self.webhook_id: Optional[int] = params.get("webhook_id")
         self.webhook_token: Optional[str] = params.get("webhook_token")
-        
-        
-    @property
-    def key(self) -> str:
-        return f'{self.method} {self.url}'
 
     @property
-    def major_parameters(self) -> str:
-        """Returns the major parameters formatted a string.
-        This needs to be appended to a bucket hash to constitute as a full rate limit key.
-        """
-        return '+'.join(
-            str(k) for k in (self.channel_id, self.guild_id, self.webhook_id, self.webhook_token) if k is not None
-        )
+    def endpoint(self) -> str:
+        """The formatted url for this route."""
+        return self.url.format_map({k: urlquote(str(v)) for k, v in self.params.items()})
+
+    @property
+    def bucket(self) -> str:
+        """The pseudo-bucket that represents this route. This is generated via the method, raw url and top level parameters."""
+        top_level_params = {
+            k: getattr(self, k)
+            for k in ("guild_id", "channel_id", "webhook_id", "webhook_token")
+            if getattr(self, k) is not None
+        }
+        other_params = {k: None for k in self.params.keys() if k not in top_level_params.keys()}
+
+        return f"{self.method}:{self.url.format_map({**top_level_params, **other_params})}"
 
 
 class HTTPClient:
@@ -68,7 +68,6 @@ class HTTPClient:
 
             self._gateway.dispatcher.add_callback(name, func)
                 
-        
         return inner
 
     @property
@@ -92,23 +91,36 @@ class HTTPClient:
     async def request(
         self, route: Route, 
         *,
-        query_params: Optional[dict[str, Any]] = None
+        query_params: Optional[dict[str, Any]] = None,
+        json_params: Union[dict[str, Any], list[Any]] = None,
+        **extras
 
     ):
+        kwargs: dict[str, Any] = extras or {}
+
         response = await self._session.request(
             route.method,
             f"{BASE_API_URL}{route.url}",
             params=query_params,
-            headers=self.base_headers
+            headers=self.base_headers,
+            json=json_params,
+            **kwargs
         )
-
+    
         if response.status >= 400:
             raise HTTPException(response, await self._text_or_json(response))
+
+        _log.info(response.headers.get("X-RateLimit-Remaining"))
 
         return await self._text_or_json(response)
 
     async def get_gateway_bot(self):
         return await self.request(Route("GET", f"/gateway/bot"))
+
+    
+
+    async def send_message(self, channel: int, content: str):
+        return await self.request(Route("POST", f"/channels/{channel}/messages"), json_params={"content": content}) # Only supports content until ratelimiting and more objects are made.
 
     async def get_me(self):
         return await self.request(Route("GET", "/users/@me"))
