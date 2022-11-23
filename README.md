@@ -1,5 +1,5 @@
 # wharf
-An in progress discord api wrapper for python
+An minimal discord api wrapper that allows **you** to do what you want to do
 
 # WARNING
-ratelimiting handling is not yet handled nor is a bunch of other stuff. this should not be used greatly.
+Not everything in this library is fully made yet such as ratelimiting or proper models (objects/classes). i suggest you use this library at this stage, with only your own choice.
