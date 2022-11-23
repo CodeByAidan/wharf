@@ -103,5 +103,4 @@ class HTTPClient:
         return await self.request(Route("GET", "/users/@me"))
 
     async def start(self):
-        await self.get_me()
         await self._gateway.connect()

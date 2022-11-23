@@ -118,6 +118,7 @@ class Gateway:
                 self.session = ClientSession()
 
             self.ws = await self.session.ws_connect(self.gw_url)
+
             _log.info("Connected to gateway")
 
             while True:
@@ -148,12 +149,16 @@ class Gateway:
                     await self.ws.send_json(self.ping_payload)
 
                 elif data["op"] == OPCodes.dispatch:
+          
+                    _log.info(data['t'])
+                    
                     event_data = data["d"]
 
                     if data["t"] == "READY":
                         self.session_id = data['d']['session_id']
                         self.resume_gateway_url = data['d']['resume_gateway_url']
-                    
+
+                
                     if data['t'].lower() not in self.dispatcher.events:
                         continue
                     
@@ -164,6 +169,10 @@ class Gateway:
 
                 elif data['op'] == OPCodes.reconnect:
                     _log.info(data)
+                    await self.ws.close(code=4001)
+                    await self.connect(reconnect=True)
+
+                elif data['op'] == OPCodes.resume:
                     await self.ws.close(code=4001)
                     await self.connect(reconnect=True)
                 
