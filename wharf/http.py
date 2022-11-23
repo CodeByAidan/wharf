@@ -7,9 +7,10 @@ from urllib.parse import quote as urlquote
 import aiohttp
 
 from . import __version__
-from .errors import HTTPException
+from .errors import HTTPException, BucketMigrated
 from .gateway import Gateway
 import logging
+from .impl.ratelimit import Ratelimiter
 
 _log = logging.getLogger(__name__)
 
@@ -60,6 +61,8 @@ class HTTPClient:
             __version__, sys.version_info
         )
         self.loop = asyncio.get_event_loop()
+        self.ratelimiter = Ratelimiter()
+        self.req_id = 0
 
     def listen(self, name: str):
         def inner(func):
@@ -96,28 +99,71 @@ class HTTPClient:
         **extras
 
     ):
+        self.req_id += 1
+
+        max_tries = 5
+
+        bucket = self.ratelimiter.get_bucket(route.bucket)
         kwargs: dict[str, Any] = extras or {}
+        
+        for tries in range(max_tries):
+            async with self.ratelimiter.global_bucket:
+                async with bucket:
+                    response = await self._session.request(
+                        route.method,
+                        f"{BASE_API_URL}{route.url}",
+                        params=query_params,
+                        headers=self.base_headers,
+                        json=json_params,
+                        **kwargs
+                    )
+                
+                    bucket_url = bucket.bucket is None
+                    bucket.update_info(response)
+                    await bucket.acquire()
 
-        response = await self._session.request(
-            route.method,
-            f"{BASE_API_URL}{route.url}",
-            params=query_params,
-            headers=self.base_headers,
-            json=json_params,
-            **kwargs
-        )
-    
-        if response.status >= 400:
-            raise HTTPException(response, await self._text_or_json(response))
+                    if bucket_url and bucket.bucket is not None:
+                        try:
+                            self.ratelimiter.migrate(route.bucket, bucket.bucket)
+                        except BucketMigrated:
+                            bucket = self.ratelimiter.get_bucket(route.bucket)
 
-        _log.info(response.headers.get("X-RateLimit-Remaining"))
+                    if 200 <= response.status < 300:
+                        return await self._text_or_json(response)
 
-        return await self._text_or_json(response)
+                    if response.status == 429: # Uh oh! we're ratelimited shit fuck
+                        if "Via" not in response.headers:
+                            # cloudflare fucked us. :(
+
+                            raise HTTPException(response, await self._text_or_json(response))
+
+                        retry_after = float(response.headers["Retry-After"])
+                        is_global = response.headers["X-RateLimit-Scope"] == "global"
+
+                        if is_global:
+                            _log.info(
+                                "REQUEST:%d All requests have hit a global ratelimit! Retrying in %f.",
+                                self.req_id,
+                                retry_after,
+                            )
+                            self.ratelimiter.global_bucket.lock_for(retry_after)
+                            await self.ratelimiter.global_bucket.acquire()
+
+                        _log.info("REQUEST:%d Ratelimit is over. Continuing with the request.", self.req_id)
+                        continue
+
+                    if response.status in {500, 502, 504}:
+                        wait_time = 1 + tries * 2
+                        _log.info("REQUEST: %d Got a server error! Retrying in %d.", self.req_id, wait_time)
+                        await asyncio.sleep(wait_time)
+                        continue
+
+                    if response.status >= 400:
+                        raise HTTPException(response, await self._text_or_json(response))
+                
 
     async def get_gateway_bot(self):
         return await self.request(Route("GET", f"/gateway/bot"))
-
-    
 
     async def send_message(self, channel: int, content: str):
         return await self.request(Route("POST", f"/channels/{channel}/messages"), json_params={"content": content}) # Only supports content until ratelimiting and more objects are made.

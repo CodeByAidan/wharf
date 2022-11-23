@@ -70,3 +70,10 @@ class HTTPException(Exception):
 
         # more shitty aiohttp typing
         super().__init__(format.format(response.status, response.reason, self.code, self.text))  # type: ignore
+
+
+class BucketMigrated(BaseException):
+    """Represents an internal exception for when a bucket migrates."""
+
+    def __init__(self, discord_hash: str):
+        super().__init__(f"The current bucket was migrated to another bucket at {discord_hash}")
