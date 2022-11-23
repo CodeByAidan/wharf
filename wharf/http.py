@@ -1,15 +1,14 @@
-import aiohttp
-from typing import TYPE_CHECKING, Any, Optional
-
-from .gateway import Gateway
-
-from urllib.parse import quote as urlquote
-import json
-from . import __version__
-import sys
-from .errors import HTTPException
 import asyncio
+import json
+import sys
+from typing import TYPE_CHECKING, Any, Optional
+from urllib.parse import quote as urlquote
 
+import aiohttp
+
+from . import __version__
+from .errors import HTTPException
+from .gateway import Gateway
 
 __all__ = ("Route",)
 
@@ -55,7 +54,7 @@ class HTTPClient:
         self._intents = intents
         self._token = token
         self.__session: aiohttp.ClientSession = None  # type: ignore
-        self._gateway = Gateway(self, token=token, intents=intents)
+        self._gateway = Gateway(self)
         self.base_headers = {"Authorization": f"Bot {self._token}"}
         self.user_agent = "DiscordBot (https://github.com/sawshadev/wharf, {0}) Python/{1.major}.{1.minor}.{1.micro}".format(
             __version__, sys.version_info

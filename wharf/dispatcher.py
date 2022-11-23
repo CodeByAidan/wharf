@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import TypeVar, Callable, Coroutine, Any
+
+import asyncio
 import inspect
 import logging
-import asyncio
+from typing import Any, Callable, Coroutine, TypeVar
 
 _log = logging.getLogger(__name__)
 T = TypeVar("T")

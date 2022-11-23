@@ -1,12 +1,14 @@
 from typing import Optional, Union
+
 import discord_typings as dt
 from aiohttp import ClientResponse
+
 
 class BaseException(Exception):
     pass
 
 
-class WebsocketClosed(BaseException):
+class WebsocketClosed(Exception):
     def __init__(self, code: int, message: str):
         self.code = code
         self.msg = message
@@ -29,7 +31,7 @@ def _shorten_error_dict(d: dt.NestedHTTPErrorsData, parent_key: str = "") -> dic
     return ret_items
 
 
-class HTTPException(BaseException):
+class HTTPException(Exception):
     """Represents an error while attempting to connect to the Discord REST API.
     Args:
         response (aiohttp.ClientResponse): The response from the attempted REST API request.
