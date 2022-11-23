@@ -8,6 +8,7 @@ import json
 from . import __version__
 import sys
 from .errors import HTTPException
+import asyncio
 
 
 __all__ = ("Route",)
@@ -59,6 +60,17 @@ class HTTPClient:
         self.user_agent = "DiscordBot (https://github.com/sawshadev/wharf, {0}) Python/{1.major}.{1.minor}.{1.micro}".format(
             __version__, sys.version_info
         )
+        self.loop = asyncio.get_event_loop()
+
+    def listen(self, name: str):
+        def inner(func):
+            if name not in self._gateway.dispatcher.events:
+                self._gateway.dispatcher.add_event(name)
+
+            self._gateway.dispatcher.add_callback(name, func)
+                
+        
+        return inner
 
     @property
     def _session(self):
@@ -104,3 +116,6 @@ class HTTPClient:
 
     async def start(self):
         await self._gateway.connect()
+
+    def run(self):
+        asyncio.run(self.start())

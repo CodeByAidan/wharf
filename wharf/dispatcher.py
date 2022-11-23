@@ -10,8 +10,10 @@ Func = Callable[..., T]
 CoroFunc = Func[Coroutine[Any, Any, Any]]
 
 class Dispatcher:
+    """An base for an simple event dispatcher"""
+
     def __init__(self):
-        self.events = {}
+        self.events: dict[str, list[CoroFunc]] = {}
     
     def add_event(self, event_name: str):
         self.events[event_name] = []
