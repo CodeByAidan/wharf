@@ -7,6 +7,7 @@ from urllib.parse import quote as urlquote
 import json
 from . import __version__
 import sys
+from .errors import HTTPException
 
 
 __all__ = ("Route",)
@@ -90,7 +91,17 @@ class HTTPClient:
             headers=self.base_headers
         )
 
+        if response.status >= 400:
+            raise HTTPException(response, await self._text_or_json(response))
+
         return await self._text_or_json(response)
 
+    async def get_gateway_bot(self):
+        return await self.request(Route("GET", f"/gateway/bot"))
+
+    async def get_me(self):
+        return await self.request(Route("GET", "/users/@me"))
+
     async def start(self):
+        await self.get_me()
         await self._gateway.connect()

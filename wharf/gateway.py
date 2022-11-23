@@ -35,7 +35,6 @@ class Gateway:
     if TYPE_CHECKING:
         ws: ClientWebSocketResponse
         heartbeat_interval: int
-        resume_gw_url: str
 
     def __init__(self, http: HTTPClient, *, token: str, intents: int):
         self.http = http
@@ -68,7 +67,7 @@ class Gateway:
                 self.dispatcher.add_event(name)
 
             self.dispatcher.add_callback(name, func)
-
+                
         
         return inner
 
@@ -110,7 +109,7 @@ class Gateway:
             self._first_heartbeat = False
 
         await asyncio.sleep(jitters / 1000)
-
+        asyncio.create_task(self.keep_heartbeat())
 
     async def connect(self, *, reconnect: bool = False):
         try:
@@ -129,7 +128,7 @@ class Gateway:
                         elif msg.type == WSMsgType.TEXT:  
                             data = msg.data  
 
-                    data = json.loads(data)
+                        data = json.loads(data)
 
                     self._last_sequence = data["s"]
 
@@ -151,29 +150,32 @@ class Gateway:
 
                     elif data["op"] == OPCodes.dispatch:
                         event_data = data["d"]
+                        _log.info(data["t"])
 
                         if data["t"] == "READY":
                             self.session_id = data['d']['session_id']
                             self.resume_gateway_url = data['d']['resume_gateway_url']
                         
                         if data['t'].lower() not in self.dispatcher.events:
-                            pass
-                        else:
-                            self.dispatcher.dispatch(data["t"].lower(), event_data)
-
+                            continue
+                        
+                        self.dispatcher.dispatch(data["t"].lower(), event_data)
+    
                     elif data["op"] == OPCodes.heartbeat_ack:
                         _log.info("Heartbeat Awknoledged!")
 
                     elif data['op'] == OPCodes.reconnect:
+                        _log.info(data)
                         await self.ws.close(code=4001)
                         await self.connect(reconnect=True)
+                    
                     elif data["op"] == OPCodes.invalid_session:
+                        _log.info(data)
                         await self.ws.close(code=4001)
                         break
-                
-                    elif msg.type == WSMsgType.CLOSE:
-                        raise WebsocketClosed(msg.data, msg.extra)
 
+                    elif msg.type == WSMsgType.CLOSE:
+                        _log.info(f"{msg.data} {msg.extra}")
         except Exception as e:
             print(e)
            

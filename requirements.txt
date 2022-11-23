@@ -1,0 +1,2 @@
+discord_typings
+aiohttp
