@@ -10,7 +10,8 @@ path = Path(__file__).parent / "wharf" / "__init__.py"
 version = re.search(r"\d[.]\d[.]\d", path.read_text()).group(0)  # type: ignore
 
 packages = [
-    "lanyard",
+    "wharf",
+    "wharf.impl"
 ]
 
 
