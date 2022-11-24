@@ -1,6 +1,9 @@
-from .flag import Flag, flag
 from typing import TYPE_CHECKING
+
 from typing_extensions import Self
+
+from .flag import Flag, flag
+
 
 class Intents(Flag):
     if TYPE_CHECKING:

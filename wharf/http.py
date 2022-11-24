@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import sys
 from typing import TYPE_CHECKING, Any, Optional, Union
 from urllib.parse import quote as urlquote
@@ -7,9 +8,8 @@ from urllib.parse import quote as urlquote
 import aiohttp
 
 from . import __version__
-from .errors import HTTPException, BucketMigrated
+from .errors import BucketMigrated, HTTPException
 from .gateway import Gateway
-import logging
 from .impl.ratelimit import Ratelimiter
 from .objects import Embed
 
@@ -126,14 +126,10 @@ class HTTPClient:
                         except BucketMigrated:
                             bucket = self.ratelimiter.get_bucket(route.bucket)
 
-
-
                     if 200 <= response.status < 300:
                         return await self._text_or_json(response)
 
-
                     if response.status == 429:  # Uh oh! we're ratelimited shit fuck
-
 
                         if "Via" not in response.headers:
                             # cloudflare fucked us. :(
@@ -183,17 +179,13 @@ class HTTPClient:
         if embed:
             embeds.append(embed)
 
-
         return await self.request(
             Route("POST", f"/channels/{channel}/messages"),
             json_params={"content": content, "embeds": embeds},
         )  # Only supports content until ratelimiting and more objects are made.
 
     async def get_guild(self, guild_id: int):
-        return await self.request(
-            Route("GET", f"/guilds/{guild_id}")
-        )
-
+        return await self.request(Route("GET", f"/guilds/{guild_id}"))
 
     async def get_me(self):
         return await self.request(Route("GET", "/users/@me"))

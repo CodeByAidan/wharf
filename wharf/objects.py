@@ -5,7 +5,11 @@ class Embed:
         self.fields: list[dict] = []
 
     def to_dict(self):
-        return {"title": self.title, "description": self.description, "fields": self.fields}
+        return {
+            "title": self.title,
+            "description": self.description,
+            "fields": self.fields,
+        }
 
     def add_field(self, *, name: str, value: str, inline: bool = False):
         self.fields.append({"name": name, "value": value, "inline": inline})

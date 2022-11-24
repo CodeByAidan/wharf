@@ -1,7 +1,9 @@
 import asyncio
-from typing import Optional, Union
 from datetime import datetime, timezone
+from typing import Optional, Union
+
 from aiohttp import ClientResponse
+
 from ..errors import BucketMigrated
 
 

@@ -1,7 +1,9 @@
-from .http import HTTPClient
-from .objects import Embed
-from .intents import Intents
 import asyncio
+
+from .http import HTTPClient
+from .intents import Intents
+from .objects import Embed
+
 
 class Client:
     def __init__(self, *, token: str, intents: Intents):
@@ -20,7 +22,7 @@ class Client:
 
     async def send(self, channel_id: int, content: str, *, embed: Embed = None):
         await self.http.send_message(channel_id, content, embed)
-    
+
     async def start(self):
         await self.http.start()
 

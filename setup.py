@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+
 from setuptools import setup
 
 with open("requirements.txt") as f:
