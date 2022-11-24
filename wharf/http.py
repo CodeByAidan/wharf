@@ -174,6 +174,7 @@ class HTTPClient:
     async def get_gateway_bot(self):
         return await self.request(Route("GET", f"/gateway/bot"))
 
+
     async def send_message(self, channel: int, content: str, embed: Embed = None):
         embeds = []
         if embed:
@@ -185,7 +186,9 @@ class HTTPClient:
         )  # Only supports content until ratelimiting and more objects are made.
 
     async def get_guild(self, guild_id: int):
-        return await self.request(Route("GET", f"/guilds/{guild_id}"))
+        resp = await self.request(Route("GET", f"/guilds/{guild_id}"))
+        return resp
+
 
     async def get_me(self):
         return await self.request(Route("GET", "/users/@me"))

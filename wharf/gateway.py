@@ -18,7 +18,7 @@ from .errors import WebsocketClosed
 if TYPE_CHECKING:
     from .http import HTTPClient
 
-
+logging.basicConfig(level=logging.INFO)
 _log = logging.getLogger(__name__)
 
 
