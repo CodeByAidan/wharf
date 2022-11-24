@@ -11,6 +11,7 @@ from .errors import HTTPException, BucketMigrated
 from .gateway import Gateway
 import logging
 from .impl.ratelimit import Ratelimiter
+from .objects import Embed
 
 _log = logging.getLogger(__name__)
 
@@ -35,7 +36,9 @@ class Route:
     @property
     def endpoint(self) -> str:
         """The formatted url for this route."""
-        return self.url.format_map({k: urlquote(str(v)) for k, v in self.params.items()})
+        return self.url.format_map(
+            {k: urlquote(str(v)) for k, v in self.params.items()}
+        )
 
     @property
     def bucket(self) -> str:
@@ -45,9 +48,13 @@ class Route:
             for k in ("guild_id", "channel_id", "webhook_id", "webhook_token")
             if getattr(self, k) is not None
         }
-        other_params = {k: None for k in self.params.keys() if k not in top_level_params.keys()}
+        other_params = {
+            k: None for k in self.params.keys() if k not in top_level_params.keys()
+        }
 
-        return f"{self.method}:{self.url.format_map({**top_level_params, **other_params})}"
+        return (
+            f"{self.method}:{self.url.format_map({**top_level_params, **other_params})}"
+        )
 
 
 class HTTPClient:
@@ -63,15 +70,6 @@ class HTTPClient:
         self.loop = asyncio.get_event_loop()
         self.ratelimiter = Ratelimiter()
         self.req_id = 0
-
-    def listen(self, name: str):
-        def inner(func):
-            if name not in self._gateway.dispatcher.events:
-                self._gateway.dispatcher.add_event(name)
-
-            self._gateway.dispatcher.add_callback(name, func)
-                
-        return inner
 
     @property
     def _session(self):
@@ -92,12 +90,12 @@ class HTTPClient:
         return text
 
     async def request(
-        self, route: Route, 
+        self,
+        route: Route,
         *,
         query_params: Optional[dict[str, Any]] = None,
         json_params: Union[dict[str, Any], list[Any]] = None,
-        **extras
-
+        **extras,
     ):
         self.req_id += 1
 
@@ -105,7 +103,7 @@ class HTTPClient:
 
         bucket = self.ratelimiter.get_bucket(route.bucket)
         kwargs: dict[str, Any] = extras or {}
-        
+
         for tries in range(max_tries):
             async with self.ratelimiter.global_bucket:
                 async with bucket:
@@ -115,9 +113,9 @@ class HTTPClient:
                         params=query_params,
                         headers=self.base_headers,
                         json=json_params,
-                        **kwargs
+                        **kwargs,
                     )
-                
+
                     bucket_url = bucket.bucket is None
                     bucket.update_info(response)
                     await bucket.acquire()
@@ -128,14 +126,21 @@ class HTTPClient:
                         except BucketMigrated:
                             bucket = self.ratelimiter.get_bucket(route.bucket)
 
+
+
                     if 200 <= response.status < 300:
                         return await self._text_or_json(response)
 
-                    if response.status == 429: # Uh oh! we're ratelimited shit fuck
+
+                    if response.status == 429:  # Uh oh! we're ratelimited shit fuck
+
+
                         if "Via" not in response.headers:
                             # cloudflare fucked us. :(
 
-                            raise HTTPException(response, await self._text_or_json(response))
+                            raise HTTPException(
+                                response, await self._text_or_json(response)
+                            )
 
                         retry_after = float(response.headers["Retry-After"])
                         is_global = response.headers["X-RateLimit-Scope"] == "global"
@@ -149,24 +154,46 @@ class HTTPClient:
                             self.ratelimiter.global_bucket.lock_for(retry_after)
                             await self.ratelimiter.global_bucket.acquire()
 
-                        _log.info("REQUEST:%d Ratelimit is over. Continuing with the request.", self.req_id)
+                        _log.info(
+                            "REQUEST:%d Ratelimit is over. Continuing with the request.",
+                            self.req_id,
+                        )
                         continue
 
                     if response.status in {500, 502, 504}:
                         wait_time = 1 + tries * 2
-                        _log.info("REQUEST: %d Got a server error! Retrying in %d.", self.req_id, wait_time)
+                        _log.info(
+                            "REQUEST: %d Got a server error! Retrying in %d.",
+                            self.req_id,
+                            wait_time,
+                        )
                         await asyncio.sleep(wait_time)
                         continue
 
                     if response.status >= 400:
-                        raise HTTPException(response, await self._text_or_json(response))
-                
+                        raise HTTPException(
+                            response, await self._text_or_json(response)
+                        )
 
     async def get_gateway_bot(self):
         return await self.request(Route("GET", f"/gateway/bot"))
 
-    async def send_message(self, channel: int, content: str):
-        return await self.request(Route("POST", f"/channels/{channel}/messages"), json_params={"content": content}) # Only supports content until ratelimiting and more objects are made.
+    async def send_message(self, channel: int, content: str, embed: Embed = None):
+        embeds = []
+        if embed:
+            embeds.append(embed)
+
+
+        return await self.request(
+            Route("POST", f"/channels/{channel}/messages"),
+            json_params={"content": content, "embeds": embeds},
+        )  # Only supports content until ratelimiting and more objects are made.
+
+    async def get_guild(self, guild_id: int):
+        return await self.request(
+            Route("GET", f"/guilds/{guild_id}")
+        )
+
 
     async def get_me(self):
         return await self.request(Route("GET", "/users/@me"))

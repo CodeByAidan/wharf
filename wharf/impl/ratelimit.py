@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from aiohttp import ClientResponse
 from ..errors import BucketMigrated
 
+
 class RatelimiterBase:
     "An base for any ratelimiter subclassed from this. only provides needed stuff, everything else is up to the subclassed ratelimiters!"
 
@@ -21,9 +22,10 @@ class RatelimiterBase:
     async def __aenter__(self):
         await self.acquire()
         return None
-    
+
     async def __aexit__(self, *args):
         pass
+
 
 class ManualRatelimiter(RatelimiterBase):
     """A simple ratelimiter that simply locks at the command of anything."""
@@ -43,6 +45,7 @@ class ManualRatelimiter(RatelimiterBase):
         self.lock.clear()
         asyncio.create_task(self._unlock(delay))
 
+
 class BurstRatelimiter(ManualRatelimiter):
     def __init__(self):
         RatelimiterBase.__init__(self)
@@ -53,9 +56,9 @@ class BurstRatelimiter(ManualRatelimiter):
     async def acquire(self):
         if self.reset_after and self.remaining == 0 and not self.is_locked():
             self.lock_for(self.reset_after)
-            
+
         return await super().acquire()
-        
+
 
 class Bucket(BurstRatelimiter):
     def __init__(self):
@@ -99,12 +102,16 @@ class Bucket(BurstRatelimiter):
             else:
                 self.reset_after = (
                     reset_after if self.reset_after < reset_after else self.reset_after
-                )   
+                )
 
         if self._first_update:
             self._first_update = False
 
-        if self.reset_after is not None and self.remaining == 0 and not self.is_locked():
+        if (
+            self.reset_after is not None
+            and self.remaining == 0
+            and not self.is_locked()
+        ):
             self.lock_for(self.reset_after)
 
     def migrate(self, hash: str):
@@ -115,6 +122,7 @@ class Bucket(BurstRatelimiter):
     @property
     def migrated(self):
         return self._migrated
+
 
 class Ratelimiter:
     def __init__(self):
@@ -128,16 +136,15 @@ class Ratelimiter:
             bucket = Bucket()
             self.url_buckets[url] = bucket
             return bucket
-        
+
         hash = self.url_to_discord_hash[url]
         return self.discord_buckets[hash]
 
     def migrate(self, url: str, hash: str):
         self.url_to_discord_hash[url] = hash
-        
+
         bucket = self.url_buckets[url]
         self.discord_buckets[hash] = bucket
         self.url_buckets.pop(url)
 
         bucket.migrate(hash)
-

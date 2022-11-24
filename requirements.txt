@@ -1,2 +1,3 @@
 discord_typings
 aiohttp
+typing_extensions

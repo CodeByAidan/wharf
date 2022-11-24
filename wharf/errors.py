@@ -15,7 +15,10 @@ class WebsocketClosed(Exception):
 
         super().__init__(f"Gateway was closed with code {code}: {message}")
 
-def _shorten_error_dict(d: dt.NestedHTTPErrorsData, parent_key: str = "") -> dict[str, str]:
+
+def _shorten_error_dict(
+    d: dt.NestedHTTPErrorsData, parent_key: str = ""
+) -> dict[str, str]:
     ret_items: dict[str, str] = {}
 
     _errors = d.get("_errors")
@@ -44,7 +47,9 @@ class HTTPException(Exception):
     __slots__ = ("text", "code")
 
     def __init__(
-        self, response: ClientResponse, data: Optional[Union[dt.HTTPErrorResponseData, str]]
+        self,
+        response: ClientResponse,
+        data: Optional[Union[dt.HTTPErrorResponseData, str]],
     ) -> None:
         self.code: int
         self.text: str
@@ -76,4 +81,6 @@ class BucketMigrated(BaseException):
     """Represents an internal exception for when a bucket migrates."""
 
     def __init__(self, discord_hash: str):
-        super().__init__(f"The current bucket was migrated to another bucket at {discord_hash}")
+        super().__init__(
+            f"The current bucket was migrated to another bucket at {discord_hash}"
+        )
