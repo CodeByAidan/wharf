@@ -9,3 +9,4 @@ from .gateway import *
 from .http import *
 from .intents import *
 from .objects import *
+from .file import *

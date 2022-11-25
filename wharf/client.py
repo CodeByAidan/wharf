@@ -4,6 +4,7 @@ from .http import HTTPClient
 from .gateway import Gateway
 from .intents import Intents
 from .objects import Guild, Embed
+from .file import File
 
 
 class Client:
@@ -26,9 +27,8 @@ class Client:
         
         return Guild(await self._http.get_guild(guild_id))
 
-    async def send(self, channel_id: int, content: str, *, embed: Embed = None):
-        await self._http.send_message(channel_id, content, embed)
-
+    async def send(self, channel_id: int, content: str, *, embed: Embed = None, files: list[File] = None):
+        await self._http.send_message(channel_id, content=content, files=files)
 
 
     async def start(self):

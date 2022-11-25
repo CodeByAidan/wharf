@@ -5,6 +5,8 @@ import sys
 from typing import TYPE_CHECKING, Any, Optional, Union
 from urllib.parse import quote as urlquote
 
+from dataclasses import dataclass
+
 import aiohttp
 
 from . import __version__
@@ -12,6 +14,9 @@ from .errors import BucketMigrated, HTTPException
 from .gateway import Gateway
 from .impl.ratelimit import Ratelimiter
 from .objects import Embed
+from .file import File
+
+import json
 
 _log = logging.getLogger(__name__)
 
@@ -20,6 +25,13 @@ __all__ = ("Route",)
 
 BASE_API_URL = "https://discord.com/api/v10"
 
+@dataclass
+class PreparedData:
+    json: Optional[dict] = None
+    multipart_content: Optional[aiohttp.FormData] = None
+
+def _filter_dict(d: dict[Any, Any]):
+    return dict(filter(lambda item: item[1] is not None, d.items()))
 
 class Route:
     def __init__(self, method: str, url: str, **params: Any) -> None:
@@ -71,6 +83,8 @@ class HTTPClient:
         self.ratelimiter = Ratelimiter()
         self.req_id = 0
 
+        self.default_headers: dict[str, str] = {"Authorization": f"Bot {self._token}"}
+
     @property
     def _session(self):
         if self.__session is None or self.__session.closed:
@@ -89,20 +103,59 @@ class HTTPClient:
 
         return text
 
+    @staticmethod
+    def _prepare_data(
+        data: Optional[dict[str, Any]], files: Optional[File]
+    ):
+        pd = PreparedData()
+
+        if data is not None and files is None:
+            pd.json =  _filter_dict(data) 
+
+        if data is not None and files is not None:
+            form_dat = aiohttp.FormData()
+
+            form_dat.add_field(
+                "payload_json",
+                f"{json.dumps(data)}",
+                content_type="application/json"
+            )
+
+            form_dat.add_field(
+                f"files[{1}]", files.fp, content_type=files.content_type, filename=files.filename
+            )
+
+            pd.multipart_content = form_dat
+
+        return pd
+
     async def request(
         self,
         route: Route,
         *,
         query_params: Optional[dict[str, Any]] = None,
-        json_params: Union[dict[str, Any], list[Any]] = None,
-        **extras,
+        json_params: dict = None,
+        files: Optional[list[File]] = None,
     ):
         self.req_id += 1
 
+        query_params = query_params or {}
         max_tries = 5
 
+        kwargs = {}
+
+        data = self._prepare_data(json_params, files[0])
+
+
+        if data.json is not None:
+            kwargs["json"] = data.json
+
+        if data.multipart_content is not None:
+            kwargs["data"] = data.multipart_content
+
         bucket = self.ratelimiter.get_bucket(route.bucket)
-        kwargs: dict[str, Any] = extras or {}
+
+        _log.info(data.json)
 
         for tries in range(max_tries):
             async with self.ratelimiter.global_bucket:
@@ -112,7 +165,6 @@ class HTTPClient:
                         f"{BASE_API_URL}{route.url}",
                         params=query_params,
                         headers=self.base_headers,
-                        json=json_params,
                         **kwargs,
                     )
 
@@ -130,7 +182,7 @@ class HTTPClient:
                         return await self._text_or_json(response)
 
                     if response.status == 429:  # Uh oh! we're ratelimited shit fuck
-
+                        _log.info("Retry after %s",response.headers['Retry-After'])
                         if "Via" not in response.headers:
                             # cloudflare fucked us. :(
 
@@ -174,16 +226,22 @@ class HTTPClient:
     async def get_gateway_bot(self):
         return await self.request(Route("GET", f"/gateway/bot"))
 
+    async def register_app_commands(self, name: str, type: int, description: str):
+        me = await self.get_me()
 
-    async def send_message(self, channel: int, content: str, embed: Embed = None):
-        embeds = []
-        if embed:
-            embeds.append(embed)
+        resp = await self.request(Route("POST", f"/applications/{me['id']}/commands"), json={"name": name, "type": type, "description": description})
+        return resp
 
+    async def interaction_respond(self, content: str, *, id: int, token: str):
+        resp = await self.request(Route("POST", f"/interactions/{id}/{token}/callback"), json={"type":4,"data":{"content":content}})
+        return resp
+        
+    async def send_message(self, channel: int, content: str,  files: list[File] = None):
         return await self.request(
             Route("POST", f"/channels/{channel}/messages"),
-            json_params={"content": content, "embeds": embeds},
-        )  # Only supports content until ratelimiting and more objects are made.
+            json_params={"content": content},
+            files=files
+        )
 
     async def get_guild(self, guild_id: int):
         resp = await self.request(Route("GET", f"/guilds/{guild_id}"))

@@ -18,6 +18,8 @@ from .errors import WebsocketClosed
 if TYPE_CHECKING:
     from .http import HTTPClient
 
+
+logging.basicConfig(level=logging.INFO)
 _log = logging.getLogger(__name__)
 
 
@@ -128,8 +130,6 @@ class Gateway:
 
                 data = json.loads(data)
 
-            _log.info(data["op"])
-
             self._last_sequence = data["s"]
 
             if data["op"] == OPCodes.hello:
@@ -146,8 +146,11 @@ class Gateway:
                 await self.ws.send_json(self.ping_payload)
 
             if data["op"] == OPCodes.dispatch:
+                _log.info(data["t"])
+                
                 if data["t"] == "READY":
                     self.session_id = data["d"]["session_id"]
+                
                 event_data = data["d"]
 
                 if data["t"].lower() not in self.dispatcher.events.keys():
