@@ -2,4 +2,4 @@
 An minimal discord api wrapper that allows **you** to do what you want to do
 
 # WARNING
-Not everything in this library is fully made yet such as proper models (objects/classes). i suggest you use this library at this stage, with only your own choice.
+Alot of stuff in this library is not yet fully made. proper models, api routes, etc are mostly not yet made.<br>I do not recommend you use the library as is.<br>if you want to contribute to the development of the library, i'd be happy to allow that.
