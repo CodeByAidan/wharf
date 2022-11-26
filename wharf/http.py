@@ -122,7 +122,7 @@ class HTTPClient:
             )
 
             form_dat.add_field(
-                f"files[{1}]", files.fp, content_type=files.content_type, filename=files.filename
+                f"files[{1}]", files.fp, filename=files.filename
             )
 
             pd.multipart_content = form_dat
@@ -144,7 +144,7 @@ class HTTPClient:
 
         kwargs = {}
 
-        data = self._prepare_data(json_params, files[0])
+        data = self._prepare_data(json_params, files)
 
 
         if data.json is not None:

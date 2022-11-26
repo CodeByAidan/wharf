@@ -38,7 +38,7 @@ class Dispatcher:
 
         self.events[event_name].append(func)
 
-        _log.info("Registered callback for event %s", event_name)
+        _log.info("Registered callback for event %r", event_name)
 
     def remove_callback(self, event_name: str, index: int):
         if event_name not in self.events:
@@ -46,7 +46,7 @@ class Dispatcher:
 
         self.events[event_name].pop(index)
 
-        _log.info("Removed callback from event %s", event_name)
+        _log.info("Removed callback from event %r", event_name)
 
     def dispatch(self, event_name: str, *args, **kwargs):
         if event_name not in self.events:
@@ -57,4 +57,4 @@ class Dispatcher:
         for callback in callbacks:
             asyncio.create_task(callback(*args, **kwargs))
 
-        _log.info("Dispatched event %s", event_name)
+        _log.info("Dispatched event %r", event_name)

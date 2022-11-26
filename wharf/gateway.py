@@ -39,7 +39,6 @@ class OPCodes:
 
 class Gateway:
     if TYPE_CHECKING:
-        ws: ClientWebSocketResponse
         heartbeat_interval: int
 
     def __init__(self, http: HTTPClient):
@@ -54,6 +53,7 @@ class Gateway:
         self._decompresser = zlib.decompressobj()
         self.loop = asyncio.get_event_loop()
         self.session: Optional[ClientSession] = None
+        self.ws: Optional[ClientWebSocketResponse] = None
 
     def _decompress_msg(self, msg: Union[str, bytes]):
         ZLIB_SUFFIX = b"\x00\x00\xff\xff"
@@ -105,11 +105,31 @@ class Gateway:
         if self._first_heartbeat:
             jitters *= random.uniform(1.0, 0.0)
             self._first_heartbeat = False
-
-        _log.info("jitters: %s", jitters)
+            
         await self.ws.send_json(self.ping_payload)
         await asyncio.sleep(jitters)
         asyncio.create_task(self.keep_heartbeat())
+
+    async def send(self, data: dict):
+        await self.ws.send_json(data)
+        _log.info("Sent json to the gateway successfully")
+        
+
+    async def _change_precense(self, *, status: str):
+        activities = [] # Placeholder whilst i do more testing with presences uwu
+
+        payload = {
+            "op": OPCodes.presence_update,
+            "d": {
+                "status": status,
+                "afk": False,
+                "since": 0.0,
+                "activities": activities
+            }
+        }
+
+        await self.ws.send_json(payload)
+
 
     async def connect(self, *, reconnect: bool = False):
         if not self.session:
@@ -120,7 +140,7 @@ class Gateway:
         while True:
 
             msg = await self.ws.receive()
-            _log.info(msg.type)
+
             if msg.type in (WSMsgType.BINARY, WSMsgType.TEXT):
                 data: Union[Any, str] = None
                 if msg.type == WSMsgType.BINARY:
@@ -136,17 +156,16 @@ class Gateway:
                 self.heartbeat_interval = data["d"]["heartbeat_interval"] / 1000
 
                 if reconnect:
-                    await self.ws.send_json(self.resume_payload)
+                    await self.send(self.resume_payload)
                 else:
-                    await self.ws.send_json(self.identify_payload)
+                    await self.send(self.identify_payload)
 
                 asyncio.create_task(self.keep_heartbeat())
 
             if data["op"] == OPCodes.heartbeat:
-                await self.ws.send_json(self.ping_payload)
+                await self.send(self.ping_payload)
 
             if data["op"] == OPCodes.dispatch:
-                _log.info(data["t"])
                 
                 if data["t"] == "READY":
                     self.session_id = data["d"]["session_id"]
@@ -160,7 +179,6 @@ class Gateway:
 
             if data["op"] == OPCodes.heartbeat_ack:
                 self._last_heartbeat_ack = datetime.datetime.now()
-                _log.info("Heartbeat Awknoledged!")
 
             if data["op"] == OPCodes.reconnect:
                 _log.info(data)

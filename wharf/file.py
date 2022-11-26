@@ -24,13 +24,11 @@ class File:
         "filename",
         "_owner",
         "_orig_close",
-        "content_type",
     )
 
     def __init__(
         self,
         fp: t.Union[io.IOBase, str, bytes],
-        content_type: str,
         *,
         filename: t.Optional[str] = None,
         spoiler: bool = False,
@@ -61,7 +59,6 @@ class File:
 
         self._orig_close: Callable[[], None] = self.fp.close
         self.fp.close = lambda: None
-        self.content_type: str = content_type
 
     @property
     def spoiler(self) -> bool:

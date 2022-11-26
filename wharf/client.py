@@ -5,6 +5,7 @@ from .gateway import Gateway
 from .intents import Intents
 from .objects import Guild, Embed
 from .file import File
+from .enums import Statuses
 
 
 class Client:
@@ -22,6 +23,9 @@ class Client:
             self._http._gateway.dispatcher.add_callback(name, func)
 
         return inner
+
+    async def change_presence(self, status: Statuses):
+        await self._ws._change_precense(status = status.value)
 
     async def fetch_guild(self, guild_id: int):
         
