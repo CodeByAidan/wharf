@@ -7,7 +7,6 @@ from typing import TypeVar, Callable, Coroutine, Any
 import logging
 import asyncio
 
-from .models.message import Message
 
 EventT = TypeVar("EventT")
 T = TypeVar("T")
