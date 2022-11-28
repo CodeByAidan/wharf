@@ -1,60 +1,52 @@
 from __future__ import annotations
 
-import asyncio
 import inspect
-import logging
-from typing import Any, Callable, Coroutine, TypeVar
 
-_log = logging.getLogger(__name__)
+from typing import TypeVar, Callable, Coroutine, Any
+
+import logging
+import asyncio
+
+from .models.message import Message
+
+EventT = TypeVar("EventT")
 T = TypeVar("T")
 Func = Callable[..., T]
 CoroFunc = Func[Coroutine[Any, Any, Any]]
 
+_log = logging.getLogger(__name__)
 
 class Dispatcher:
-    """An base for an simple event dispatcher"""
-
     def __init__(self):
-        self.events: dict[str, list[CoroFunc]] = {}
+        self.events = {}
 
-    def add_event(self, event_name: str):
-        self.events[event_name] = []
+    def filter_events(self, event_type: EventT, event_data):
+        if event_type in ("message_create"):
+            return Message(event_data)
 
-    def remove_event(self, event_name: str):
-        self.events.pop(event_name)
-
-    def get_event(self, event_name: str):
-        event = self.events.get(event_name)
-        return event
-
-    def add_callback(self, event_name: str, func: CoroFunc):
-        if not asyncio.iscoroutinefunction(func):
-            raise TypeError(
-                "Callback MUST be a coroutine, the callback provided is not one."
-            )
-
+    def add_callback(self, event_name, func):
         if event_name not in self.events:
             raise ValueError("Event not in any known events!")
 
         self.events[event_name].append(func)
+    
+    def add_event(self, event_name: str):
+        self.events[event_name] = []
 
-        _log.info("Registered callback for event %r", event_name)
-
-    def remove_callback(self, event_name: str, index: int):
-        if event_name not in self.events:
-            raise ValueError("Event not in any known events!")
-
-        self.events[event_name].pop(index)
-
-        _log.info("Removed callback from event %r", event_name)
+    def subscribe(self, event_name: str, func):
+        self.events[event_name] = [func]
+        _log.info("Subscribed to %r", event_name)
 
     def dispatch(self, event_name: str, *args, **kwargs):
         if event_name not in self.events:
             raise ValueError("Event not in any events known :(")
+        
+        event = self.events.get(event_name)
+        data = self.filter_events(event_name, *args)
 
-        callbacks = self.events.get(event_name)
-
-        for callback in callbacks:
-            asyncio.create_task(callback(*args, **kwargs))
+        for callback in event:
+            asyncio.create_task(callback(data, **kwargs))
 
         _log.info("Dispatched event %r", event_name)
+    
+ 
