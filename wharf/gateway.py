@@ -49,7 +49,7 @@ class Gateway:
         self.gw_url: str = f"wss://gateway.discord.gg/?v={self.api_version}&encoding=json&compress=zlib-stream"
         self._last_sequence: Optional[int] = None
         self._first_heartbeat = True
-        self.dispatcher = Dispatcher()
+        self.dispatcher = Dispatcher(self)
         self._decompresser = zlib.decompressobj()
         self.loop = asyncio.get_event_loop()
         self.session: Optional[ClientSession] = None

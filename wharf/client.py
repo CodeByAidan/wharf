@@ -3,7 +3,7 @@ import asyncio
 from .http import HTTPClient
 from .gateway import Gateway
 from .intents import Intents
-from .objects import Guild, Embed
+from .impl import Guild, Embed
 from .file import File
 from .enums import Statuses
 
@@ -13,7 +13,7 @@ class Client:
         self.intents = intents
 
         self._http = HTTPClient(token=token, intents=intents.value)
-        self._ws = Gateway(self._http)
+        self._ws = self._http._gateway
 
     def listen(self, name: str):
         def inner(func):

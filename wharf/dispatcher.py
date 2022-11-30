@@ -7,7 +7,7 @@ from typing import TypeVar, Callable, Coroutine, Any
 import logging
 import asyncio
 
-from .objects import Message
+from .impl import Message, Interaction
 
 
 EventT = TypeVar("EventT")
@@ -18,8 +18,9 @@ CoroFunc = Func[Coroutine[Any, Any, Any]]
 _log = logging.getLogger(__name__)
 
 class Dispatcher:
-    def __init__(self):
+    def __init__(self, gateway):
         self.events = {}
+        self.gw = gateway
 
     def filter_events(self, event_type: EventT, event_data):
         if event_type in ("message_create", "message_update"):
@@ -29,7 +30,10 @@ class Dispatcher:
 
             return Message(event_data)
 
-        
+        elif event_type == "interaction_create":
+            return Interaction(self.gw, event_data)
+
+        return event_data
 
     def add_callback(self, event_name, func):
         if event_name not in self.events:

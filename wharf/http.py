@@ -13,7 +13,7 @@ from . import __version__
 from .errors import BucketMigrated, HTTPException
 from .gateway import Gateway
 from .impl.ratelimit import Ratelimiter
-from .objects import Embed
+from .impl import Embed
 from .file import File
 
 import json
@@ -229,11 +229,11 @@ class HTTPClient:
     async def register_app_commands(self, name: str, type: int, description: str):
         me = await self.get_me()
 
-        resp = await self.request(Route("POST", f"/applications/{me['id']}/commands"), json={"name": name, "type": type, "description": description})
+        resp = await self.request(Route("POST", f"/applications/{me['id']}/commands"), json_params={"name": name, "type": type, "description": description})
         return resp
 
     async def interaction_respond(self, content: str, *, id: int, token: str):
-        resp = await self.request(Route("POST", f"/interactions/{id}/{token}/callback"), json={"type":4,"data":{"content":content}})
+        resp = await self.request(Route("POST", f"/interactions/{id}/{token}/callback"), json_params={"type":4, "data":{"content":content}})
         return resp
         
     async def send_message(self, channel: int, content: str,  files: list[File] = None):
