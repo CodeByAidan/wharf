@@ -41,7 +41,7 @@ class Gateway:
     if TYPE_CHECKING:
         heartbeat_interval: int
 
-    def __init__(self, http: HTTPClient):
+    def __init__(self, dispatcher: Dispatcher, http: HTTPClient):
         self.http = http
         self.token = self.http._token
         self.intents = self.http._intents
@@ -49,7 +49,7 @@ class Gateway:
         self.gw_url: str = f"wss://gateway.discord.gg/?v={self.api_version}&encoding=json&compress=zlib-stream"
         self._last_sequence: Optional[int] = None
         self._first_heartbeat = True
-        self.dispatcher = Dispatcher(self)
+        self.dispatcher = dispatcher
         self._decompresser = zlib.decompressobj()
         self.loop = asyncio.get_event_loop()
         self.session: Optional[ClientSession] = None

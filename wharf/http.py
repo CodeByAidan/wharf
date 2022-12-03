@@ -13,8 +13,9 @@ from . import __version__
 from .errors import BucketMigrated, HTTPException
 from .gateway import Gateway
 from .impl.ratelimit import Ratelimiter
-from .impl import Embed
+from .impl import Embed, InteractionCommand
 from .file import File
+from .dispatcher import Dispatcher
 
 import json
 
@@ -70,11 +71,11 @@ class Route:
 
 
 class HTTPClient:
-    def __init__(self, *, token: str, intents: int):
+    def __init__(self, *, dispatcher: Dispatcher, token: str, intents: int):
         self._intents = intents
         self._token = token
         self.__session: aiohttp.ClientSession = None  # type: ignore
-        self._gateway = Gateway(self)
+        self._gateway = Gateway(dispatcher, self)
         self.base_headers = {"Authorization": f"Bot {self._token}"}
         self.user_agent = "DiscordBot (https://github.com/sawshadev/wharf, {0}) Python/{1.major}.{1.minor}.{1.micro}".format(
             __version__, sys.version_info
@@ -226,10 +227,11 @@ class HTTPClient:
     async def get_gateway_bot(self):
         return await self.request(Route("GET", f"/gateway/bot"))
 
-    async def register_app_commands(self, name: str, type: int, description: str):
+    async def register_app_commands(self, command: InteractionCommand):
         me = await self.get_me()
 
-        resp = await self.request(Route("POST", f"/applications/{me['id']}/commands"), json_params={"name": name, "type": type, "description": description})
+        resp = await self.request(Route("POST", f"/applications/{me['id']}/commands"), json_params=command._to_json())
+        
         return resp
 
     async def interaction_respond(self, content: str, *, id: int, token: str):
@@ -247,12 +249,18 @@ class HTTPClient:
         resp = await self.request(Route("GET", f"/guilds/{guild_id}"))
         return resp
 
+    async def get_channel(self, channel_id: int):
+        return await self.request(Route("GET", f"/channels/{channel_id}"))
 
     async def get_me(self):
         return await self.request(Route("GET", "/users/@me"))
+
+    async def get_member(self, user_id: int, guild_id: int):
+        return await self.request(Route("GET", f"/guilds/{guild_id}/members/{user_id}"))
 
     async def start(self):
         await self._gateway.connect()
 
     def run(self):
         asyncio.run(self.start())
+    

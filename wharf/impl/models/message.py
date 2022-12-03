@@ -9,3 +9,4 @@ class Message:
     def _from_data(self, message: dt.MessageData):
         self.content = message.get("content")
         self.author = User(message['author'])
+        self.channel_id = message['channel_id']

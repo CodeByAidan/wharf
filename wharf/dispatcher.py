@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import inspect
 
-from typing import TypeVar, Callable, Coroutine, Any
+from typing import TypeVar, Callable, Coroutine, Any, TYPE_CHECKING
 
 import logging
 import asyncio
 
 from .impl import Message, Interaction
+
+if TYPE_CHECKING:
+    from .client import Client
 
 
 EventT = TypeVar("EventT")
@@ -18,9 +21,9 @@ CoroFunc = Func[Coroutine[Any, Any, Any]]
 _log = logging.getLogger(__name__)
 
 class Dispatcher:
-    def __init__(self, gateway):
+    def __init__(self, bot: Client):
         self.events = {}
-        self.gw = gateway
+        self.bot = bot
 
     def filter_events(self, event_type: EventT, event_data):
         if event_type in ("message_create", "message_update"):
@@ -31,7 +34,7 @@ class Dispatcher:
             return Message(event_data)
 
         elif event_type == "interaction_create":
-            return Interaction(self.gw, event_data)
+            return Interaction(self.bot, event_data)
 
         return event_data
 
