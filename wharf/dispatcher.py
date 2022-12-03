@@ -25,7 +25,11 @@ class Dispatcher:
         self.events = {}
         self.bot = bot
 
-    def filter_events(self, event_type: EventT, event_data):
+    def filter_events(self, event_type: EventT, event_data = None):
+
+        if not event_data:
+            return None
+
         if event_type in ("message_create", "message_update"):
             if event_type == "message_update" and len(event_data) == 4:
                 return
@@ -35,6 +39,9 @@ class Dispatcher:
 
         elif event_type == "interaction_create":
             return Interaction(self.bot, event_data)
+
+        elif event_type == "ready":
+            return None
 
         return event_data
 
@@ -57,6 +64,9 @@ class Dispatcher:
         
         event = self.events.get(event_name)
         data = self.filter_events(event_name, *args)
+
+        if data is None:
+            data = None
 
         for callback in event:
             asyncio.create_task(callback(data, **kwargs))

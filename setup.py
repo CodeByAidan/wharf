@@ -11,7 +11,8 @@ version = re.search(r"\d[.]\d[.]\d", path.read_text()).group(0)  # type: ignore
 
 packages = [
     "wharf",
-    "wharf.impl"
+    "wharf.impl",
+    "wharf.impl.models"
 ]
 
 

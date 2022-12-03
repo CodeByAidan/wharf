@@ -175,7 +175,11 @@ class Gateway:
                 if data["t"].lower() not in self.dispatcher.events.keys():
                     continue
 
-                self.dispatcher.dispatch(data["t"].lower(), event_data)
+                if data['t'].lower() == 'ready':
+                    self.dispatcher.dispatch(data["t"].lower())
+                else:
+
+                    self.dispatcher.dispatch(data["t"].lower(), event_data)
 
             if data["op"] == OPCodes.heartbeat_ack:
                 self._last_heartbeat_ack = datetime.datetime.now()
