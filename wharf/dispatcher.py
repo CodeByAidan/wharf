@@ -63,14 +63,17 @@ class Dispatcher:
             raise ValueError("Event not in any events known :(")
         
         event = self.events.get(event_name)
-        data = self.filter_events(event_name, *args)
-
-        if data is None:
+        if args is None and kwargs is None:
             data = None
+        else:
+            data = self.filter_events(event_name, *args)
 
         for callback in event:
-            asyncio.create_task(callback(data, **kwargs))
+            if data is None:
+                asyncio.create_task(callback())
+            else:
+                asyncio.create_task(callback(data))
 
-        _log.info("Dispatched event %r", event_name)
+        _log.info("Dispatched event %r", event_name) 
     
  
