@@ -9,9 +9,9 @@ async def ready(data):
 
 
 @client.listen("message_create")
-async def message_create(data):
-    if data["content"] == ".hi":
-        await client.send(data["channel_id"], "hi :)")
+async def message_create(message):
+    if message.content == ".hi":
+        await client.send(message.channel_id, "hi :)")
 
 
 client.run()
