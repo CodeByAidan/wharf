@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 
-from typing import TypeVar, Callable, Coroutine, Any, TYPE_CHECKING
+from typing import TypeVar, Callable, Coroutine, Any, TYPE_CHECKING, Dict, List
 
 import logging
 import asyncio
@@ -22,14 +22,10 @@ _log = logging.getLogger(__name__)
 
 class Dispatcher:
     def __init__(self, bot: Client):
-        self.events = {}
+        self.events: Dict[str, List[CoroFunc]] = {}
         self.bot = bot
 
     def filter_events(self, event_type: EventT, event_data = None):
-
-        if not event_data:
-            return None
-
         if event_type in ("message_create", "message_update"):
             if event_type == "message_update" and len(event_data) == 4:
                 return
@@ -45,7 +41,7 @@ class Dispatcher:
 
         return event_data
 
-    def add_callback(self, event_name, func):
+    def add_callback(self, event_name, func: CoroFunc):
         if event_name not in self.events:
             raise ValueError("Event not in any known events!")
 
@@ -54,12 +50,16 @@ class Dispatcher:
     def add_event(self, event_name: str):
         self.events[event_name] = []
 
-    def subscribe(self, event_name: str, func):
+    def subscribe(self, event_name: str, func: CoroFunc):
         self.events[event_name] = [func]
+
         _log.info("Subscribed to %r", event_name)
 
+    def get_event(self, event_name: str):
+        return self.events.get(event_name)
+
     def dispatch(self, event_name: str, *args, **kwargs):
-        if event_name not in self.events:
+        if not self.get_event(event_name):
             raise ValueError("Event not in any events known :(")
         
         event = self.events.get(event_name)

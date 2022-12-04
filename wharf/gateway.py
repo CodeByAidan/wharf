@@ -178,7 +178,6 @@ class Gateway:
                 if data['t'].lower() == 'ready':
                     self.dispatcher.dispatch(data["t"].lower())
                 else:
-
                     self.dispatcher.dispatch(data["t"].lower(), event_data)
 
             if data["op"] == OPCodes.heartbeat_ack:
