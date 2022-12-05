@@ -68,12 +68,14 @@ class Dispatcher:
         else:
             data = self.filter_events(event_name, *args)
 
-        for callback in event:
-            if data is None:
-                asyncio.create_task(callback())
-            else:
-                asyncio.create_task(callback(data))
-
-        _log.info("Dispatched event %r", event_name) 
     
+        if event is not None:
+            for callback in event:
+                if data is None:
+                    asyncio.create_task(callback())
+                else:
+                    asyncio.create_task(callback(data))
+
+            _log.info("Dispatched event %r", event_name) 
+        
  

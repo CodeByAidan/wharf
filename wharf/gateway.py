@@ -184,7 +184,7 @@ class Gateway:
                 self._last_heartbeat_ack = datetime.datetime.now()
 
             if data["op"] == OPCodes.reconnect:
-                _log.info(data)
+                _log.info("reconnected!!")
                 await self.ws.close(code=4001)
                 await self.connect(reconnect=True)
 

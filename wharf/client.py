@@ -13,8 +13,8 @@ class Client:
     def __init__(self, *, token: str, intents: Intents):
         self.intents = intents
 
-        self._dispatcher = Dispatcher(self)
-        self.http = HTTPClient(dispatcher=self._dispatcher, token=token, intents=intents.value)
+        self.dispatcher = Dispatcher(self)
+        self.http = HTTPClient(dispatcher=self.dispatcher, token=token, intents=intents.value)
         self.ws = self.http._gateway
 
     def listen(self, name: str):
