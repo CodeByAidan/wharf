@@ -105,7 +105,7 @@ class Gateway:
         if self._first_heartbeat:
             jitters *= random.uniform(1.0, 0.0)
             self._first_heartbeat = False
-            
+
         await self.ws.send_json(self.ping_payload)
         await asyncio.sleep(jitters)
         asyncio.create_task(self.keep_heartbeat())
@@ -113,10 +113,9 @@ class Gateway:
     async def send(self, data: dict):
         await self.ws.send_json(data)
         _log.info("Sent json to the gateway successfully")
-        
 
     async def _change_precense(self, *, status: str):
-        activities = [] # Placeholder whilst i do more testing with presences uwu
+        activities = []  # Placeholder whilst i do more testing with presences uwu
 
         payload = {
             "op": OPCodes.presence_update,
@@ -124,12 +123,11 @@ class Gateway:
                 "status": status,
                 "afk": False,
                 "since": 0.0,
-                "activities": activities
-            }
+                "activities": activities,
+            },
         }
 
         await self.ws.send_json(payload)
-
 
     async def connect(self, *, reconnect: bool = False):
         if not self.session:
@@ -166,16 +164,16 @@ class Gateway:
                 await self.send(self.ping_payload)
 
             if data["op"] == OPCodes.dispatch:
-                
+
                 if data["t"] == "READY":
                     self.session_id = data["d"]["session_id"]
-                
+
                 event_data = data["d"]
 
                 if data["t"].lower() not in self.dispatcher.events.keys():
                     continue
 
-                if data['t'].lower() == 'ready':
+                if data["t"].lower() == "ready":
                     self.dispatcher.dispatch(data["t"].lower())
                 else:
                     self.dispatcher.dispatch(data["t"].lower(), event_data)

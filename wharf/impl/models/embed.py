@@ -1,4 +1,5 @@
-from typing import List, Dict
+from typing import Dict, List
+
 
 class Embed:
     def __init__(self, *, title: str, description: str):

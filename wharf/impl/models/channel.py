@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import discord_typings as dt
+
 
 class Channel:
     def __init__(self, payload: dt.ChannelData):
