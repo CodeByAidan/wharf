@@ -1,10 +1,12 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, List
+
 from enum import Enum
+from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
     from ...client import Client
     from ..models import Embed
+
 
 class InteractionOptionType(Enum):
     string = 3
@@ -13,6 +15,7 @@ class InteractionOptionType(Enum):
     channel = 7
     role = 8
     attachment = 10
+
 
 class Interaction:
     def __init__(self, bot: Client, payload: dict):
@@ -23,7 +26,7 @@ class Interaction:
         self.channel_id = payload.get("channel_id")
 
     async def reply(self, content: str, embed: Embed = None):
-        await self.bot.http.interaction_respond(content, id = self.id, token=self.token)
+        await self.bot.http.interaction_respond(content, id=self.id, token=self.token)
 
 
 class InteractionCommand:
@@ -32,7 +35,15 @@ class InteractionCommand:
         self.description = description
         self.options = []
 
-    def add_options(self, *, name: str, type: InteractionOptionType,  description: str, choices: Optional[List] = None, required: bool = True):
+    def add_options(
+        self,
+        *,
+        name: str,
+        type: InteractionOptionType,
+        description: str,
+        choices: Optional[List] = None,
+        required: bool = True,
+    ):
         data = {
             "name": name,
             "description": description,
@@ -43,9 +54,7 @@ class InteractionCommand:
         if choices:
             data["choices"] = choices
 
-
         self.options.append(data)
-
 
     def _to_json(self):
         payload = {
