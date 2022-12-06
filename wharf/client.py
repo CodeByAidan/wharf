@@ -25,10 +25,10 @@ class Client:
 
     def listen(self, name: str):
         def inner(func):
-            if name not in self.http._gateway.dispatcher.events:
-                self.http._gateway.dispatcher.add_event(name)
-
-            self.http._gateway.dispatcher.add_callback(name, func)
+            if name not in self.dispatcher.events:
+                self.dispatcher.subscribe(event_name, func)
+            else:
+                self.dispatcher.add_callback(name, func)
 
         return inner
 
@@ -68,7 +68,6 @@ class Client:
 
         for command in api_commands:
             for cached_command in self._slash_commands:
-                
                 if command['name'] != cached_command['name']:
                     await self.http.delete_app_command(command)
                     continue
