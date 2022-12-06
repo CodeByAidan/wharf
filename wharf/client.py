@@ -42,15 +42,6 @@ class Client:
 
         return Guild(await self.http.get_guild(guild_id), self)
 
-    async def send(
-        self,
-        channel_id: int,
-        content: str,
-        *,
-        embed: Embed = None,
-        files: list[File] = None
-    ):
-        await self.http.send_message(channel_id, content=content, files=files)
 
     async def register_app_command(self, command: InteractionCommand):
         await self.http.register_app_commands(command)
