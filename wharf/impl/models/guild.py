@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class Guild:
     def __init__(self, data: dt.GuildData, bot: "Client"):
         self._from_data(data)
-        self.bot = bot
+        self.__bot = bot
 
     def _from_data(self, guild: dt.GuildData):
         self.name = guild.get("name")
@@ -19,4 +19,7 @@ class Guild:
         self.icon_hash = guild.get("icon")
 
     async def fetch_member(self, user: int):
-        return Member(await self.bot.http.get_member(user, self.id))
+        return Member(await self.__bot.http.get_member(user, self.id))
+
+    async def ban(self, user_id: int, *, reason: str,):
+        return 

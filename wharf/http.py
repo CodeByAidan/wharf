@@ -3,7 +3,7 @@ import json
 import logging
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, List
 from urllib.parse import quote as urlquote
 
 import aiohttp
@@ -130,7 +130,7 @@ class HTTPClient:
         *,
         query_params: Optional[dict[str, Any]] = None,
         json_params: dict = None,
-        files: Optional[list[File]] = None,
+        files: Optional[List[File]] = None,
     ):
         self.req_id += 1
 
@@ -244,32 +244,34 @@ class HTTPClient:
 
         return resp
 
-    async def interaction_respond(self, content: str, *, id: int, token: str):
-        resp = await self.request(
+    def interaction_respond(self, content: str, *, id: int, token: str):
+        resp = self.request(
             Route("POST", f"/interactions/{id}/{token}/callback"),
             json_params={"type": 4, "data": {"content": content}},
         )
         return resp
 
-    async def send_message(self, channel: int, content: str, files: list[File] = None):
-        return await self.request(
+    def send_message(self, channel: int, *, content: str, embed: Embed, files: List[File] = None):
+        return self.request(
             Route("POST", f"/channels/{channel}/messages"),
-            json_params={"content": content},
+            json_params={"content": content, "embeds": [embed.to_dict()]},
             files=files,
         )
 
-    async def get_guild(self, guild_id: int):
-        resp = await self.request(Route("GET", f"/guilds/{guild_id}"))
+    def get_guild(self, guild_id: int):
+        resp = self.request(Route("GET", f"/guilds/{guild_id}"))
         return resp
 
-    async def get_channel(self, channel_id: int):
-        return await self.request(Route("GET", f"/channels/{channel_id}"))
+    def get_channel(self, channel_id: int):
+        return self.request(Route("GET", f"/channels/{channel_id}"))
 
-    async def get_me(self):
-        return await self.request(Route("GET", "/users/@me"))
+    def get_me(self):
+        return self.request(Route("GET", "/users/@me"))
 
-    async def get_member(self, user_id: int, guild_id: int):
-        return await self.request(Route("GET", f"/guilds/{guild_id}/members/{user_id}"))
+    def get_member(self, user_id: int, guild_id: int):
+        return self.request(Route("GET", f"/guilds/{guild_id}/members/{user_id}"))
+
+    
 
     async def start(self):
         await self._gateway.connect()

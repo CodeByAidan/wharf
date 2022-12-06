@@ -18,6 +18,17 @@ class InteractionOptionType(Enum):
     role = 8
     attachment = 10
 
+class InteractionOption:
+    def __init__(self, payload: dict):
+        self._from_data(payload)
+
+    def _from_data(self, payload: dict):
+        self.name = payload.get("name")
+        self._type = payload.get("type")
+        self.value = payload.get("value")
+
+    def __str__(self):
+        return self.value
 
 class Interaction:
     def __init__(self, bot: Client, payload: dict):
@@ -27,10 +38,22 @@ class Interaction:
         self.token = payload.get("token")
         self.channel_id = payload.get("channel_id")
         self.command = InteractionCommand._from_json(payload)
+        self.options: List[InteractionOption] = []
+
+        self._make_options()
 
 
     async def reply(self, content: str, embed: Embed = None):
+        """
+        Replies to a discord interaction
+        """
+
         await self.bot.http.interaction_respond(content, id=self.id, token=self.token)
+
+    def _make_options(self):
+        for option in self.payload['data']['options']:
+            option = InteractionOption(option)
+            self.options.append(option)
 
 
 class InteractionCommand:
