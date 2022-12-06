@@ -2,6 +2,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, List
 from enum import Enum
 
+import discord_typings as dt
+
 if TYPE_CHECKING:
     from ...client import Client
     from ..models import Embed
@@ -21,6 +23,8 @@ class Interaction:
         self.id = payload.get("id")
         self.token = payload.get("token")
         self.channel_id = payload.get("channel_id")
+        self.command = InteractionCommand._from_json(payload)
+
 
     async def reply(self, content: str, embed: Embed = None):
         await self.bot.http.interaction_respond(content, id = self.id, token=self.token)
@@ -58,3 +62,10 @@ class InteractionCommand:
             payload["options"] = self.options
 
         return payload
+
+    @classmethod
+    def _from_json(cls, payload: dt.InteractionCreateData):
+        name = payload['data']['name']
+        description = payload['data'].get("description", "")
+
+        return cls(name=name, description=description)

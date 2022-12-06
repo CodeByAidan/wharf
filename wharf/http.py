@@ -234,6 +234,20 @@ class HTTPClient:
         
         return resp
 
+    async def delete_app_command(self, payload):
+        me = await self.get_me()
+
+        resp = await self.request(Route("DELETE", f"/applications/{me['id']}/commands/{payload['id']}"))
+        
+        return resp
+
+    async def get_app_commands(self):
+        me = await  self.get_me()
+
+        resp = await self.request(Route("GET", f"/applications/{me['id']}/commands"))
+
+        return resp
+
     async def interaction_respond(self, content: str, *, id: int, token: str):
         resp = await self.request(Route("POST", f"/interactions/{id}/{token}/callback"), json_params={"type":4, "data":{"content":content}})
         return resp
