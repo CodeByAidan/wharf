@@ -1,12 +1,12 @@
 import asyncio
 
 from .http import HTTPClient
-from .gateway import Gateway
 from .intents import Intents
 from .impl import Guild, Embed, Channel, InteractionCommand
+from .dispatcher import Dispatcher
 from .file import File
 from .enums import Statuses
-from .dispatcher import Dispatcher
+
 
 from typing import List
 
@@ -17,7 +17,9 @@ class Client:
         self.intents = intents
 
         self.dispatcher = Dispatcher(self)
-        self.http = HTTPClient(dispatcher=self.dispatcher, token=token, intents=intents.value)
+        self.http = HTTPClient(
+            dispatcher=self.dispatcher, token=token, intents=intents.value
+        )
         self.ws = self.http._gateway
         self._slash_commands = []
 
@@ -31,16 +33,23 @@ class Client:
         return inner
 
     async def change_presence(self, status: Statuses):
-        await self. ws._change_precense(status = status.value)
+        await self.ws._change_precense(status=status.value)
 
     async def fetch_channel(self, channel_id: int):
         return Channel(await self.http.get_channel(channel_id))
 
     async def fetch_guild(self, guild_id: int):
-        
+
         return Guild(await self.http.get_guild(guild_id), self)
 
-    async def send(self, channel_id: int, content: str, *, embed: Embed = None, files: list[File] = None):
+    async def send(
+        self,
+        channel_id: int,
+        content: str,
+        *,
+        embed: Embed = None,
+        files: list[File] = None
+    ):
         await self.http.send_message(channel_id, content=content, files=files)
 
     async def register_app_command(self, command: InteractionCommand):

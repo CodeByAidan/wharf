@@ -2,22 +2,19 @@ import asyncio
 import json
 import logging
 import sys
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional, Union
 from urllib.parse import quote as urlquote
-
-from dataclasses import dataclass
 
 import aiohttp
 
 from . import __version__
-from .errors import BucketMigrated, HTTPException
-from .gateway import Gateway
-from .impl.ratelimit import Ratelimiter
-from .impl import Embed, InteractionCommand
-from .file import File
 from .dispatcher import Dispatcher
-
-import json
+from .errors import BucketMigrated, HTTPException
+from .file import File
+from .gateway import Gateway
+from .impl import Embed, InteractionCommand
+from .impl.ratelimit import Ratelimiter
 
 _log = logging.getLogger(__name__)
 
@@ -26,13 +23,16 @@ __all__ = ("Route",)
 
 BASE_API_URL = "https://discord.com/api/v10"
 
+
 @dataclass
 class PreparedData:
     json: Optional[dict] = None
     multipart_content: Optional[aiohttp.FormData] = None
 
+
 def _filter_dict(d: dict[Any, Any]):
     return dict(filter(lambda item: item[1] is not None, d.items()))
+
 
 class Route:
     def __init__(self, method: str, url: str, **params: Any) -> None:
@@ -105,26 +105,20 @@ class HTTPClient:
         return text
 
     @staticmethod
-    def _prepare_data(
-        data: Optional[dict[str, Any]], files: Optional[File]
-    ):
+    def _prepare_data(data: Optional[dict[str, Any]], files: Optional[File]):
         pd = PreparedData()
 
         if data is not None and files is None:
-            pd.json =  _filter_dict(data) 
+            pd.json = _filter_dict(data)
 
         if data is not None and files is not None:
             form_dat = aiohttp.FormData()
 
             form_dat.add_field(
-                "payload_json",
-                f"{json.dumps(data)}",
-                content_type="application/json"
+                "payload_json", f"{json.dumps(data)}", content_type="application/json"
             )
 
-            form_dat.add_field(
-                f"files[{1}]", files.fp, filename=files.filename
-            )
+            form_dat.add_field(f"files[{1}]", files.fp, filename=files.filename)
 
             pd.multipart_content = form_dat
 
@@ -146,7 +140,6 @@ class HTTPClient:
         kwargs = {}
 
         data = self._prepare_data(json_params, files)
-
 
         if data.json is not None:
             kwargs["json"] = data.json
@@ -183,7 +176,7 @@ class HTTPClient:
                         return await self._text_or_json(response)
 
                     if response.status == 429:  # Uh oh! we're ratelimited shit fuck
-                        _log.info("Retry after %s",response.headers['Retry-After'])
+                        _log.info("Retry after %s", response.headers["Retry-After"])
                         if "Via" not in response.headers:
                             # cloudflare fucked us. :(
 
@@ -230,8 +223,11 @@ class HTTPClient:
     async def register_app_commands(self, command: InteractionCommand):
         me = await self.get_me()
 
-        resp = await self.request(Route("POST", f"/applications/{me['id']}/commands"), json_params=command._to_json())
-        
+        resp = await self.request(
+            Route("POST", f"/applications/{me['id']}/commands"),
+            json_params=command._to_json(),
+        )
+
         return resp
 
     async def delete_app_command(self, payload):
@@ -249,14 +245,17 @@ class HTTPClient:
         return resp
 
     async def interaction_respond(self, content: str, *, id: int, token: str):
-        resp = await self.request(Route("POST", f"/interactions/{id}/{token}/callback"), json_params={"type":4, "data":{"content":content}})
+        resp = await self.request(
+            Route("POST", f"/interactions/{id}/{token}/callback"),
+            json_params={"type": 4, "data": {"content": content}},
+        )
         return resp
-        
-    async def send_message(self, channel: int, content: str,  files: list[File] = None):
+
+    async def send_message(self, channel: int, content: str, files: list[File] = None):
         return await self.request(
             Route("POST", f"/channels/{channel}/messages"),
             json_params={"content": content},
-            files=files
+            files=files,
         )
 
     async def get_guild(self, guild_id: int):
@@ -277,4 +276,3 @@ class HTTPClient:
 
     def run(self):
         asyncio.run(self.start())
-    

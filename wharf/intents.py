@@ -1,17 +1,18 @@
 from enum import Enum
 
+
 class Intents(Enum):
-    NONE = 0 
+    NONE = 0
     GUILDS = 1 << 0
-    GUILD_MEMBERS =  1 << 1
+    GUILD_MEMBERS = 1 << 1
     GUILD_BANS = 1 << 2
     GUILD_EMOJIS = 1 << 3
     GUILD_INTEGRATIONS = 1 << 4
     GUILD_WEBHOOKS = 1 << 5
-    GUILD_INVITES  = 1 << 6 
+    GUILD_INVITES = 1 << 6
     GUILD_VOICE_STATES = 1 << 7
     GUILD_PRESENCES = 1 << 8
-    GUILD_MESSAGES  = 1 << 9
+    GUILD_MESSAGES = 1 << 9
     GUILD_MESSAGE_REACTIONS = 1 << 10
     GUILD_MESSAGE_TYPING = 1 << 11
     DIRECT_MESSAGES = 1 << 12
@@ -50,29 +51,21 @@ class Intents(Enum):
         use.
     """
 
-    ALL_DMS = DIRECT_MESSAGES | DIRECT_MESSAGE_TYPING| DIRECT_MESSAGE_REACTIONS
+    ALL_DMS = DIRECT_MESSAGES | DIRECT_MESSAGE_TYPING | DIRECT_MESSAGE_REACTIONS
     """All private message channel (non-guild bound) intents."""
 
     ALL_MESSAGES = DIRECT_MESSAGES | GUILD_MESSAGES
-
 
     ALL_MESSAGE_REACTIONS = DIRECT_MESSAGE_REACTIONS | GUILD_MESSAGE_REACTIONS
 
     ALL_MESSAGE_TYPING = DIRECT_MESSAGE_TYPING | GUILD_MESSAGE_TYPING
 
-
     ALL_UNPRIVILEGED = ALL_GUILDS_UNPRIVILEGED | ALL_DMS
-
 
     ALL_PRIVILEGED = ALL_GUILDS_PRIVILEGED | MESSAGE_CONTENT
 
-
     ALL = ALL_UNPRIVILEGED | ALL_PRIVILEGED
-
 
     @property
     def is_privileged(self) -> bool:
         return bool(self & self.ALL_PRIVILEGED)
-
-
-

@@ -5,8 +5,8 @@ __license__ = "MIT"
 __copyright__ = "Copyright (c) 2022 SawshaDev"
 
 from .client import *
+from .file import *
 from .gateway import *
 from .http import *
-from .intents import *
-from .file import *
 from .impl import *
+from .intents import *

@@ -1,15 +1,15 @@
-import discord_typings as dt
 from typing import TYPE_CHECKING
+
+import discord_typings as dt
 
 from .member import Member
 
 if TYPE_CHECKING:
     from ...client import Client
-    
 
 
 class Guild:
-    def __init__(self, data: dt.GuildData, bot: 'Client'):
+    def __init__(self, data: dt.GuildData, bot: "Client"):
         self._from_data(data)
         self.bot = bot
 
