@@ -61,10 +61,8 @@ class Dispatcher:
             raise ValueError("Event not in any events known :(")
 
         event = self.events.get(event_name)
-        if args is None and kwargs is None:
-            data = None
-        else:
-            data = self.filter_events(event_name, *args)
+
+        data = self.filter_events(event_name, *args)
 
         if event is not None:
             for callback in event:

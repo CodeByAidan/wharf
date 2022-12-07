@@ -22,4 +22,4 @@ class Guild:
         return Member(await self.__bot.http.get_member(user, self.id))
 
     async def ban(self, user_id: int, *, reason: str,):
-        return 
+        await self.__bot.http.ban(self.id, user_id, reason)

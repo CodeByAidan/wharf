@@ -107,7 +107,7 @@ class Gateway:
             self._first_heartbeat = False
 
         await self.ws.send_json(self.ping_payload)
-        await asyncio.sleep(jitters)
+        await asyncio.sleep(jitters / 1000)
         asyncio.create_task(self.keep_heartbeat())
 
     async def send(self, data: dict):
@@ -150,8 +150,10 @@ class Gateway:
 
             self._last_sequence = data["s"]
 
+            _log.info(data['op'])
+
             if data["op"] == OPCodes.hello:
-                self.heartbeat_interval = data["d"]["heartbeat_interval"] / 1000
+                self.heartbeat_interval = data["d"]["heartbeat_interval"]
 
                 if reconnect:
                     await self.send(self.resume_payload)
@@ -173,10 +175,8 @@ class Gateway:
                 if data["t"].lower() not in self.dispatcher.events.keys():
                     continue
 
-                if data["t"].lower() == "ready":
-                    self.dispatcher.dispatch(data["t"].lower())
-                else:
-                    self.dispatcher.dispatch(data["t"].lower(), event_data)
+
+                self.dispatcher.dispatch(data["t"].lower(), event_data)
 
             if data["op"] == OPCodes.heartbeat_ack:
                 self._last_heartbeat_ack = datetime.datetime.now()

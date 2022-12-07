@@ -131,13 +131,20 @@ class HTTPClient:
         query_params: Optional[dict[str, Any]] = None,
         json_params: dict = None,
         files: Optional[List[File]] = None,
+        reason: Optional[str] = None,
+        **kwargs
     ):
         self.req_id += 1
 
         query_params = query_params or {}
         max_tries = 5
 
-        kwargs = {}
+        kwargs = kwargs or {}
+
+        headers: dict[str, str] = self.default_headers
+
+        if reason:
+            headers["X-Audit-Log-Reason"] = urlquote(reason, safe="/ ")
 
         data = self._prepare_data(json_params, files)
 
@@ -149,8 +156,6 @@ class HTTPClient:
 
         bucket = self.ratelimiter.get_bucket(route.bucket)
 
-        _log.info(data.json)
-
         for tries in range(max_tries):
             async with self.ratelimiter.global_bucket:
                 async with bucket:
@@ -158,7 +163,7 @@ class HTTPClient:
                         route.method,
                         f"{BASE_API_URL}{route.url}",
                         params=query_params,
-                        headers=self.base_headers,
+                        headers=headers,
                         **kwargs,
                     )
 
@@ -271,7 +276,11 @@ class HTTPClient:
     def get_member(self, user_id: int, guild_id: int):
         return self.request(Route("GET", f"/guilds/{guild_id}/members/{user_id}"))
 
-    
+    def ban(self, guild_id: int, user_id: int, reason: str):
+        route = Route("PUT", f"/guilds/{guild_id}/bans/{user_id}")
+
+
+        return self.request(route, reason=reason)
 
     async def start(self):
         await self._gateway.connect()
