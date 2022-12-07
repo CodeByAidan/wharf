@@ -26,7 +26,7 @@ class Client:
     def listen(self, name: str):
         def inner(func):
             if name not in self.dispatcher.events:
-                self.dispatcher.subscribe(event_name, func)
+                self.dispatcher.subscribe(name, func)
             else:
                 self.dispatcher.add_callback(name, func)
 
