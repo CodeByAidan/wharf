@@ -25,10 +25,10 @@ class Client:
 
     def listen(self, name: str):
         def inner(func):
-            if name not in self.http._gateway.dispatcher.events:
-                self.http._gateway.dispatcher.add_event(name)
-
-            self.http._gateway.dispatcher.add_callback(name, func)
+            if name not in self.dispatcher.events:
+                self.dispatcher.subscribe(event_name, func)
+            else:
+                self.dispatcher.add_callback(name, func)
 
         return inner
 
@@ -42,15 +42,6 @@ class Client:
 
         return Guild(await self.http.get_guild(guild_id), self)
 
-    async def send(
-        self,
-        channel_id: int,
-        content: str,
-        *,
-        embed: Embed = None,
-        files: list[File] = None
-    ):
-        await self.http.send_message(channel_id, content=content, files=files)
 
     async def register_app_command(self, command: InteractionCommand):
         await self.http.register_app_commands(command)
@@ -68,7 +59,6 @@ class Client:
 
         for command in api_commands:
             for cached_command in self._slash_commands:
-                
                 if command['name'] != cached_command['name']:
                     await self.http.delete_app_command(command)
                     continue

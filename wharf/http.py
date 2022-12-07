@@ -249,10 +249,10 @@ class HTTPClient:
 
         return resp
 
-    def interaction_respond(self, content: str, *, id: int, token: str):
+    def interaction_respond(self, content: str, embed: Embed, *, id: int, token: str):
         resp = self.request(
             Route("POST", f"/interactions/{id}/{token}/callback"),
-            json_params={"type": 4, "data": {"content": content}},
+            json_params={"type": 4, "data": {"content": content, "embeds":[embed]}},
         )
         return resp
 
