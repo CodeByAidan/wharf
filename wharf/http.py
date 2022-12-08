@@ -115,7 +115,7 @@ class HTTPClient:
                 "payload_json", f"{json.dumps(data)}", content_type="application/json"
             )
 
-            form_dat.add_field(f"files[{1}]", files.fp, filename=files.filename)
+            form_dat.add_field('files[1]', files.fp, filename=files.filename)
 
             pd.multipart_content = form_dat
 
