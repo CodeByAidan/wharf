@@ -66,14 +66,14 @@ class HTTPException(Exception):
             self.text = data or ""
             self.code = 0
 
-        format = "{0} {1} (error code: {2}"
+        formatted = "{0} {1} (error code: {2}"
         if self.text:
-            format += ": {3}"
+            formatted += ": {3}"
 
-        format += ")"
+        formatted += ")"
 
         # more shitty aiohttp typing
-        super().__init__(format.format(response.status, response.reason, self.code, self.text))  # type: ignore
+        super().__init__(formatted.format(response.status, response.reason, self.code, self.text))  # type: ignore
 
 
 class BucketMigrated(BaseException):
