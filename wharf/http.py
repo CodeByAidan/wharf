@@ -220,7 +220,7 @@ class HTTPClient:
                         )
 
     async def get_gateway_bot(self):
-        return await self.request(Route("GET", f"/gateway/bot"))
+        return await self.request(Route("GET", "/gateway/bot"))
 
     async def register_app_commands(self, command: InteractionCommand):
         me = await self.get_me()
