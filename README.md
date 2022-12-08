@@ -2,7 +2,7 @@
 
 An minimal discord api wrapper that allows **you** to do what you want to do
 
-# WARNING
+## WARNING
 
 Alot of stuff in this library is not yet fully made. proper models, api routes, etc are mostly not yet made.
 
