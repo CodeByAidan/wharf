@@ -99,10 +99,7 @@ class HTTPClient:
     async def _text_or_json(resp: aiohttp.ClientResponse):
         text = await resp.text()
 
-        if resp.content_type == "application/json":
-            return json.loads(text)
-
-        return text
+        return json.loads(text) if resp.content_type == "application/json" else text
 
     @staticmethod
     def _prepare_data(data: Optional[dict[str, Any]], files: Optional[File]):
