@@ -65,9 +65,7 @@ class Route:
             k: None for k in self.params.keys() if k not in top_level_params.keys()
         }
 
-        return (
-            f"{self.method}:{self.url.format_map({**top_level_params, **other_params})}"
-        )
+        return f"{self.method}:{self.url.format_map(top_level_params | other_params)}"
 
 
 class HTTPClient:
@@ -99,10 +97,7 @@ class HTTPClient:
     async def _text_or_json(resp: aiohttp.ClientResponse):
         text = await resp.text()
 
-        if resp.content_type == "application/json":
-            return json.loads(text)
-
-        return text
+        return json.loads(text) if resp.content_type == "application/json" else text
 
     @staticmethod
     def _prepare_data(data: Optional[dict[str, Any]], files: Optional[File]):
@@ -118,7 +113,7 @@ class HTTPClient:
                 "payload_json", f"{json.dumps(data)}", content_type="application/json"
             )
 
-            form_dat.add_field(f"files[{1}]", files.fp, filename=files.filename)
+            form_dat.add_field('files[1]', files.fp, filename=files.filename)
 
             pd.multipart_content = form_dat
 
@@ -189,10 +184,10 @@ class HTTPClient:
                                 response, await self._text_or_json(response)
                             )
 
-                        retry_after = float(response.headers["Retry-After"])
                         is_global = response.headers["X-RateLimit-Scope"] == "global"
 
                         if is_global:
+                            retry_after = float(response.headers["Retry-After"])
                             _log.info(
                                 "REQUEST:%d All requests have hit a global ratelimit! Retrying in %f.",
                                 self.req_id,
@@ -223,38 +218,36 @@ class HTTPClient:
                         )
 
     async def get_gateway_bot(self):
-        return await self.request(Route("GET", f"/gateway/bot"))
+        return await self.request(Route("GET", "/gateway/bot"))
 
     async def register_app_commands(self, command: InteractionCommand):
         me = await self.get_me()
 
-        resp = await self.request(
+        return await self.request(
             Route("POST", f"/applications/{me['id']}/commands"),
             json_params=command._to_json(),
         )
 
-        return resp
-
     async def delete_app_command(self, payload):
         me = await self.get_me()
 
-        resp = await self.request(Route("DELETE", f"/applications/{me['id']}/commands/{payload['id']}"))
-        
-        return resp
+        return await self.request(
+            Route("DELETE", f"/applications/{me['id']}/commands/{payload['id']}")
+        )
 
     async def get_app_commands(self):
         me = await  self.get_me()
 
-        resp = await self.request(Route("GET", f"/applications/{me['id']}/commands"))
-
-        return resp
+        return await self.request(Route("GET", f"/applications/{me['id']}/commands"))
 
     def interaction_respond(self, content: str, embed: Embed, *, id: int, token: str):
-        resp = self.request(
+        return self.request(
             Route("POST", f"/interactions/{id}/{token}/callback"),
-            json_params={"type": 4, "data": {"content": content, "embeds":[embed]}},
+            json_params={
+                "type": 4,
+                "data": {"content": content, "embeds": [embed]},
+            },
         )
-        return resp
 
     def send_message(self, channel: int, *, content: str, embed: Embed, files: List[File] = None):
         return self.request(
@@ -264,8 +257,7 @@ class HTTPClient:
         )
 
     def get_guild(self, guild_id: int):
-        resp = self.request(Route("GET", f"/guilds/{guild_id}"))
-        return resp
+        return self.request(Route("GET", f"/guilds/{guild_id}"))
 
     def get_channel(self, channel_id: int):
         return self.request(Route("GET", f"/channels/{channel_id}"))

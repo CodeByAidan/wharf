@@ -58,19 +58,18 @@ class Gateway:
     def _decompress_msg(self, msg: Union[str, bytes]):
         ZLIB_SUFFIX = b"\x00\x00\xff\xff"
 
-        out_str: str = ""
-
         # Message should be compressed
         if len(msg) < 4 or msg[-4:] != ZLIB_SUFFIX:
+            out_str: str = ""
+
             return out_str
 
         buff = self._decompresser.decompress(msg)
-        out_str = buff.decode("utf-8")
-        return out_str
+        return buff.decode("utf-8")
 
     @property
     def identify_payload(self):
-        payload = {
+        return {
             "op": OPCodes.identify,
             "d": {
                 "token": self.token,
@@ -80,11 +79,9 @@ class Gateway:
             },
         }
 
-        return payload
-
     @property
     def resume_payload(self):
-        payload = {
+        return {
             "op": OPCodes.resume,
             "d": {
                 "token": self.token,
@@ -92,13 +89,10 @@ class Gateway:
                 "session_id": self.session_id,
             },
         }
-        return payload
 
     @property
     def ping_payload(self):
-        payload = {"op": OPCodes.heartbeat, "d": self._last_sequence}
-
-        return payload
+        return {"op": OPCodes.heartbeat, "d": self._last_sequence}
 
     async def keep_heartbeat(self):
         jitters = self.heartbeat_interval
@@ -196,7 +190,4 @@ class Gateway:
 
     @property
     def is_closed(self):
-        if not self.ws:
-            return False
-
-        return self.ws.closed
+        return self.ws.closed if self.ws else False

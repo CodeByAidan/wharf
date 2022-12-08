@@ -61,9 +61,7 @@ class Client:
             for cached_command in self._slash_commands:
                 if command['name'] != cached_command['name']:
                     await self.http.delete_app_command(command)
-                    continue
-                else:
-                    continue
+                continue
             
         
 
@@ -72,8 +70,6 @@ class Client:
     def run(self):
         try:
             asyncio.run(self.start())
-        except KeyboardInterrupt:
-            asyncio.run(self.close())
-        except RuntimeError:
+        except (KeyboardInterrupt, RuntimeError):
             asyncio.run(self.close())
             

@@ -29,7 +29,7 @@ def _shorten_error_dict(
             key_path = f"{parent_key}.{key}" if parent_key else key
             # pyright thinks the type of value could be object which violates the first parameter
             # of this function
-            ret_items.update([(k, v) for k, v in _shorten_error_dict(value, key_path).items()])  # type: ignore
+            ret_items |= list(_shorten_error_dict(value, key_path).items())
 
     return ret_items
 
@@ -56,10 +56,9 @@ class HTTPException(Exception):
         if isinstance(data, dict):
             self.code = data.get("code", 0)
             base = data.get("message", "")
-            errors = data.get("errors")
-            if errors:
+            if errors := data.get("errors"):
                 errors = _shorten_error_dict(errors)
-                helpful_msg = "In {0}: {0}".format(t for t in errors.items())
+                helpful_msg = "In {0}: {0}".format(iter(errors.items()))
                 self.text = f"{base}\n{helpful_msg}"
             else:
                 self.text = base
