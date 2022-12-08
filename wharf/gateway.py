@@ -189,7 +189,4 @@ class Gateway:
 
     @property
     def is_closed(self):
-        if not self.ws:
-            return False
-
-        return self.ws.closed
+        return self.ws.closed if self.ws else False
