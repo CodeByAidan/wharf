@@ -18,6 +18,7 @@ class InteractionOptionType(Enum):
     role = 8
     attachment = 10
 
+
 class InteractionOption:
     def __init__(self, payload: dict):
         self._from_data(payload)
@@ -29,6 +30,7 @@ class InteractionOption:
 
     def __str__(self):
         return self.value
+
 
 class Interaction:
     def __init__(self, bot: Client, payload: dict):
@@ -42,7 +44,6 @@ class Interaction:
 
         self._make_options()
 
-
     async def reply(self, content: str, embed: Embed = None):
         """
         Replies to a discord interaction
@@ -51,7 +52,7 @@ class Interaction:
         await self.bot.http.interaction_respond(content, id=self.id, token=self.token)
 
     def _make_options(self):
-        for option in self.payload['data']['options']:
+        for option in self.payload["data"]["options"]:
             option = InteractionOption(option)
             self.options.append(option)
 
@@ -97,7 +98,7 @@ class InteractionCommand:
 
     @classmethod
     def _from_json(cls, payload: dt.InteractionCreateData):
-        name = payload['data']['name']
-        description = payload['data'].get("description", "")
+        name = payload["data"]["name"]
+        description = payload["data"].get("description", "")
 
         return cls(name=name, description=description)

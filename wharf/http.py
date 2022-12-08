@@ -3,7 +3,7 @@ import json
 import logging
 import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Union, List
+from typing import TYPE_CHECKING, Any, List, Optional, Union
 from urllib.parse import quote as urlquote
 
 import aiohttp
@@ -65,9 +65,7 @@ class Route:
             k: None for k in self.params.keys() if k not in top_level_params.keys()
         }
 
-        return (
-            f"{self.method}:{self.url.format_map(top_level_params | other_params)}"
-        )
+        return f"{self.method}:{self.url.format_map(top_level_params | other_params)}"
 
 
 class HTTPClient:
@@ -115,7 +113,7 @@ class HTTPClient:
                 "payload_json", f"{json.dumps(data)}", content_type="application/json"
             )
 
-            form_dat.add_field('files[1]', files.fp, filename=files.filename)
+            form_dat.add_field("files[1]", files.fp, filename=files.filename)
 
             pd.multipart_content = form_dat
 
@@ -129,7 +127,7 @@ class HTTPClient:
         json_params: dict = None,
         files: Optional[List[File]] = None,
         reason: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         self.req_id += 1
 
@@ -233,10 +231,12 @@ class HTTPClient:
     async def delete_app_command(self, payload):
         me = await self.get_me()
 
-        return await self.request(Route("DELETE", f"/applications/{me['id']}/commands/{payload['id']}"))
+        return await self.request(
+            Route("DELETE", f"/applications/{me['id']}/commands/{payload['id']}")
+        )
 
     async def get_app_commands(self):
-        me = await  self.get_me()
+        me = await self.get_me()
 
         return await self.request(Route("GET", f"/applications/{me['id']}/commands"))
 
@@ -246,7 +246,9 @@ class HTTPClient:
             json_params={"type": 4, "data": {"content": content, "embeds": [embed]}},
         )
 
-    def send_message(self, channel: int, *, content: str, embed: Embed, files: List[File] = None):
+    def send_message(
+        self, channel: int, *, content: str, embed: Embed, files: List[File] = None
+    ):
         return self.request(
             Route("POST", f"/channels/{channel}/messages"),
             json_params={"content": content, "embeds": [embed.to_dict()]},
@@ -267,7 +269,6 @@ class HTTPClient:
 
     def ban(self, guild_id: int, user_id: int, reason: str):
         route = Route("PUT", f"/guilds/{guild_id}/bans/{user_id}")
-
 
         return self.request(route, reason=reason)
 

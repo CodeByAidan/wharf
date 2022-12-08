@@ -1,7 +1,7 @@
 import discord_typings as dt
 
-from .user import User
 from ...client import Client
+from .user import User
 
 
 class Message:

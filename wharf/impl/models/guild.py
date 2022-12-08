@@ -21,5 +21,10 @@ class Guild:
     async def fetch_member(self, user: int):
         return Member(await self.__bot.http.get_member(user, self.id))
 
-    async def ban(self, user_id: int, *, reason: str,):
+    async def ban(
+        self,
+        user_id: int,
+        *,
+        reason: str,
+    ):
         await self.__bot.http.ban(self.id, user_id, reason)

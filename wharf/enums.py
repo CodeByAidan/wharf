@@ -6,5 +6,3 @@ class Statuses(Enum):
     offline = "offline"
     dnd = "dnd"
     idle = "idle"
-
-
