@@ -186,10 +186,10 @@ class HTTPClient:
                                 response, await self._text_or_json(response)
                             )
 
-                        retry_after = float(response.headers["Retry-After"])
                         is_global = response.headers["X-RateLimit-Scope"] == "global"
 
                         if is_global:
+                            retry_after = float(response.headers["Retry-After"])
                             _log.info(
                                 "REQUEST:%d All requests have hit a global ratelimit! Retrying in %f.",
                                 self.req_id,
