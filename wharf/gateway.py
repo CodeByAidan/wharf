@@ -58,15 +58,14 @@ class Gateway:
     def _decompress_msg(self, msg: Union[str, bytes]):
         ZLIB_SUFFIX = b"\x00\x00\xff\xff"
 
-        out_str: str = ""
-
         # Message should be compressed
         if len(msg) < 4 or msg[-4:] != ZLIB_SUFFIX:
+            out_str: str = ""
+
             return out_str
 
         buff = self._decompresser.decompress(msg)
-        out_str = buff.decode("utf-8")
-        return out_str
+        return buff.decode("utf-8")
 
     @property
     def identify_payload(self):
