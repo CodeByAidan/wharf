@@ -135,8 +135,8 @@ class Ratelimiter:
             self.url_buckets[url] = bucket
             return bucket
 
-        hash = self.url_to_discord_hash[url]
-        return self.discord_buckets[hash]
+        my_hash = self.url_to_discord_hash[url]
+        return self.discord_buckets[my_hash]
 
     def migrate(self, url: str, hash: str):
         self.url_to_discord_hash[url] = hash
