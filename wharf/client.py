@@ -63,7 +63,5 @@ class Client:
     def run(self):
         try:
             asyncio.run(self.start())
-        except KeyboardInterrupt:
-            asyncio.run(self.close())
-        except RuntimeError:
+        except (KeyboardInterrupt, RuntimeError):
             asyncio.run(self.close())
