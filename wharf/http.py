@@ -225,12 +225,10 @@ class HTTPClient:
     async def register_app_commands(self, command: InteractionCommand):
         me = await self.get_me()
 
-        resp = await self.request(
+        return await self.request(
             Route("POST", f"/applications/{me['id']}/commands"),
             json_params=command._to_json(),
         )
-
-        return resp
 
     async def delete_app_command(self, payload):
         me = await self.get_me()
