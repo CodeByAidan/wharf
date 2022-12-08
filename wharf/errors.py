@@ -56,8 +56,7 @@ class HTTPException(Exception):
         if isinstance(data, dict):
             self.code = data.get("code", 0)
             base = data.get("message", "")
-            errors = data.get("errors")
-            if errors:
+            if errors := data.get("errors"):
                 errors = _shorten_error_dict(errors)
                 helpful_msg = "In {0}: {0}".format(t for t in errors.items())
                 self.text = f"{base}\n{helpful_msg}"
