@@ -233,23 +233,18 @@ class HTTPClient:
     async def delete_app_command(self, payload):
         me = await self.get_me()
 
-        resp = await self.request(Route("DELETE", f"/applications/{me['id']}/commands/{payload['id']}"))
-        
-        return resp
+        return await self.request(Route("DELETE", f"/applications/{me['id']}/commands/{payload['id']}"))
 
     async def get_app_commands(self):
         me = await  self.get_me()
 
-        resp = await self.request(Route("GET", f"/applications/{me['id']}/commands"))
-
-        return resp
+        return await self.request(Route("GET", f"/applications/{me['id']}/commands"))
 
     def interaction_respond(self, content: str, embed: Embed, *, id: int, token: str):
-        resp = self.request(
+        return self.request(
             Route("POST", f"/interactions/{id}/{token}/callback"),
-            json_params={"type": 4, "data": {"content": content, "embeds":[embed]}},
+            json_params={"type": 4, "data": {"content": content, "embeds": [embed]}},
         )
-        return resp
 
     def send_message(self, channel: int, *, content: str, embed: Embed, files: List[File] = None):
         return self.request(
@@ -259,8 +254,7 @@ class HTTPClient:
         )
 
     def get_guild(self, guild_id: int):
-        resp = self.request(Route("GET", f"/guilds/{guild_id}"))
-        return resp
+        return self.request(Route("GET", f"/guilds/{guild_id}"))
 
     def get_channel(self, channel_id: int):
         return self.request(Route("GET", f"/channels/{channel_id}"))
