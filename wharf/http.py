@@ -66,7 +66,7 @@ class Route:
         }
 
         return (
-            f"{self.method}:{self.url.format_map({**top_level_params, **other_params})}"
+            f"{self.method}:{self.url.format_map(top_level_params | other_params)}"
         )
 
 
