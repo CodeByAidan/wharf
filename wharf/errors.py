@@ -29,7 +29,7 @@ def _shorten_error_dict(
             key_path = f"{parent_key}.{key}" if parent_key else key
             # pyright thinks the type of value could be object which violates the first parameter
             # of this function
-            ret_items.update([(k, v) for k, v in _shorten_error_dict(value, key_path).items()])  # type: ignore
+            ret_items |= list(_shorten_error_dict(value, key_path).items())  # type: ignore
 
     return ret_items
 
