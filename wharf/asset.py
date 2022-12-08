@@ -26,9 +26,9 @@ class Asset:
     @classmethod
     def _from_avatar(cls, user_id: int, avatar: str):
         animated = avatar.startswith("a_")
-        format = "gif" if animated else "png"
+        formatted = "gif" if animated else "png"
         return cls(
-            url=f"{cls.BASE_URL}/avatars/{user_id}/{avatar}.{format}?size=1024",
+            url=f"{cls.BASE_URL}/avatars/{user_id}/{avatar}.{formatted}?size=1024",
             key=avatar,
             animated=animated,
         )
