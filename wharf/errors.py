@@ -58,7 +58,7 @@ class HTTPException(Exception):
             base = data.get("message", "")
             if errors := data.get("errors"):
                 errors = _shorten_error_dict(errors)
-                helpful_msg = "In {0}: {0}".format(t for t in errors.items())
+                helpful_msg = "In {0}: {0}".format(iter(errors.items()))
                 self.text = f"{base}\n{helpful_msg}"
             else:
                 self.text = base
