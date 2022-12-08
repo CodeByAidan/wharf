@@ -69,7 +69,7 @@ class Gateway:
 
     @property
     def identify_payload(self):
-        payload = {
+        return {
             "op": OPCodes.identify,
             "d": {
                 "token": self.token,
@@ -79,11 +79,9 @@ class Gateway:
             },
         }
 
-        return payload
-
     @property
     def resume_payload(self):
-        payload = {
+        return {
             "op": OPCodes.resume,
             "d": {
                 "token": self.token,
@@ -91,13 +89,10 @@ class Gateway:
                 "session_id": self.session_id,
             },
         }
-        return payload
 
     @property
     def ping_payload(self):
-        payload = {"op": OPCodes.heartbeat, "d": self._last_sequence}
-
-        return payload
+        return {"op": OPCodes.heartbeat, "d": self._last_sequence}
 
     async def keep_heartbeat(self):
         jitters = self.heartbeat_interval
@@ -149,7 +144,7 @@ class Gateway:
 
             self._last_sequence = data["s"]
 
-            _log.info(data['op'])
+            _log.info(data["op"])
 
             if data["op"] == OPCodes.hello:
                 self.heartbeat_interval = data["d"]["heartbeat_interval"]
@@ -173,7 +168,6 @@ class Gateway:
 
                 if data["t"].lower() not in self.dispatcher.events.keys():
                     continue
-
 
                 self.dispatcher.dispatch(data["t"].lower(), event_data)
 
